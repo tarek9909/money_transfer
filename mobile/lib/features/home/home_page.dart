@@ -170,16 +170,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const OnyxLogo(size: 16),
                   const SizedBox(width: 6),
-                  Text(
-                    'ONYX Private Ledger',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: AppColors.emerald,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
+                  Flexible(
+                    child: Text(
+                      'ONYX Private Ledger',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: AppColors.emerald,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                 ],
