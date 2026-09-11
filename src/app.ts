@@ -2417,9 +2417,9 @@ export function createApp() {
         const user = authOf(req);
         const input = parse(
           z.object({
-            walletId: idSchema.optional(),
-            amount: optionalMoney.optional(),
-            paidAt: z.string().datetime().optional(),
+            walletId: idSchema.optional().nullable(),
+            amount: optionalMoney.optional().nullable(),
+            paidAt: z.string().datetime().optional().nullable(),
             notes: z.string().max(500).optional().nullable(),
           }),
           req.body,
@@ -2469,7 +2469,7 @@ export function createApp() {
               "Payment wallet must belong to the template account",
             );
           const amount =
-            input.amount === undefined
+            input.amount === undefined || input.amount === null
               ? money(occurrence.expected_amount)
               : positiveMoney(input.amount);
           const txId = crypto.randomUUID();
