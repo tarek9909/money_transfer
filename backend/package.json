@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "migrate": "tsx scripts/migrate.ts",
+    "migrate:prod": "node dist/scripts/migrate.js",
     "test": "vitest run",
     "test:live": "vitest run test/live-api.test.ts",
     "test:watch": "vitest"
