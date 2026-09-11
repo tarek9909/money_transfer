@@ -390,7 +390,7 @@ class _ServerSettingsDialogState extends ConsumerState<_ServerSettingsDialog> {
               controller: _controller,
               decoration: const InputDecoration(
                 labelText: 'API Base URL',
-                hintText: 'http://192.168.10.127:4050/api/v1',
+                hintText: 'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
               ),
             ),
             const SizedBox(height: 12),
@@ -407,6 +407,14 @@ class _ServerSettingsDialogState extends ConsumerState<_ServerSettingsDialog> {
               spacing: 6,
               runSpacing: 6,
               children: [
+                ActionChip(
+                  avatar: const Icon(Icons.cloud_done_rounded, size: 16),
+                  label: const Text('Cloud (Online)'),
+                  onPressed: () => setState(
+                    () => _controller.text =
+                        'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
+                  ),
+                ),
                 ActionChip(
                   label: const Text('Wi-Fi (192.168.10.127)'),
                   onPressed: () => setState(

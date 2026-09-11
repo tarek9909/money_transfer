@@ -169,10 +169,11 @@ class TokenStore {
 class ApiClient {
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.10.127:4050/api/v1',
+    defaultValue: 'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
   );
 
   static const List<String> fallbackUrls = [
+    'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
     'http://192.168.10.127:4050/api/v1',
     'http://127.0.0.1:4050/api/v1',
     'http://10.0.2.2:4050/api/v1',
@@ -241,8 +242,14 @@ class ApiClient {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString('api_base_url');
       if (saved != null && saved.trim().isNotEmpty) {
+        if (saved.contains('192.168.10.127') || saved.contains(':4050')) {
+          await saveBaseUrl(defaultBaseUrl);
+          return;
+        }
         dio.options.baseUrl = saved.trim();
         return;
+      } else {
+        await saveBaseUrl(defaultBaseUrl);
       }
     } catch (_) {}
   }
