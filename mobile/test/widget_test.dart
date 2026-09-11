@@ -1,8 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:decimal/decimal.dart';
 import 'package:personal_money_tracker/core/api_client.dart';
+import 'package:personal_money_tracker/core/item_preset.dart';
 import 'package:personal_money_tracker/core/money.dart';
 import 'package:personal_money_tracker/core/models.dart';
+import 'package:personal_money_tracker/core/providers.dart';
+import 'package:personal_money_tracker/features/accounts/accounts_page.dart';
+import 'package:personal_money_tracker/features/auth/login_page.dart';
+import 'package:personal_money_tracker/features/auth/register_page.dart';
 
 void main() {
   test('formats money using decimal input', () {
@@ -57,4 +64,173 @@ void main() {
       isA<AccountWalletMismatchException>(),
     );
   });
+
+  test('ItemPreset correctly serializes and deserializes', () {
+    final preset = ItemPreset(
+      id: 'test_coffee',
+      title: 'Latte',
+      amount: Decimal.parse('4.75'),
+      type: 'DYNAMIC_SPENDING',
+      icon: '☕',
+      categoryName: 'Food & Dining',
+    );
+
+    final json = preset.toJson();
+    expect(json['title'], 'Latte');
+    expect(json['amount'], '4.75');
+    expect(json['type'], 'DYNAMIC_SPENDING');
+    expect(json['icon'], '☕');
+
+    final restored = ItemPreset.fromJson(json);
+    expect(restored.id, 'test_coffee');
+    expect(restored.title, 'Latte');
+    expect(restored.amount, Decimal.parse('4.75'));
+    expect(restored.type, 'DYNAMIC_SPENDING');
+    expect(restored.icon, '☕');
+    expect(restored.categoryName, 'Food & Dining');
+  });
+
+  test('defaultItemPresets contains common items with valid decimal prices', () {
+    expect(defaultItemPresets.isNotEmpty, isTrue);
+    for (final preset in defaultItemPresets) {
+      expect(preset.id, isNotEmpty);
+      expect(preset.title, isNotEmpty);
+      expect(preset.amount > Decimal.zero, isTrue);
+    }
+  });
+
+  testWidgets('AccountsPage dialog flow - open, enter text, and cancel', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          accountsProvider.overrideWith((ref) => Future.value([])),
+        ],
+        child: const MaterialApp(
+          home: AccountsPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Tap Add Account in empty state
+    final addBtn = find.text('Add Account');
+    expect(addBtn, findsOneWidget);
+    await tester.tap(addBtn);
+    await tester.pumpAndSettle();
+
+    // Verify dialog opened
+    expect(find.text('New Account'), findsOneWidget);
+    expect(find.text('Create Account'), findsOneWidget);
+
+    // Enter account name
+    await tester.enterText(find.byType(TextField), 'Revolut Personal');
+    await tester.pumpAndSettle();
+    expect(find.text('Revolut Personal'), findsOneWidget);
+
+    // Cancel dialog
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('New Account'), findsNothing);
+
+    // Open via top AppBar button
+    final topAddBtn = find.byTooltip('Add Account');
+    expect(topAddBtn, findsOneWidget);
+    await tester.tap(topAddBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('New Account'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('AccountsPage with accounts and wallets renders properly', (tester) async {
+    final mockAccounts = [
+      {
+        'id': 'acc-1',
+        'name': 'Main Bank',
+        'wallets': [
+          {
+            'id': 'w-1',
+            'name': 'Checking Account',
+            'walletTypeCode': 'CHECKING',
+            'currencyCode': 'USD',
+            'currentBalance': '2500.50',
+          },
+          {
+            'id': 'w-2',
+            'name': 'Emergency Cash',
+            'walletTypeCode': 'CASH',
+            'currencyCode': 'USD',
+            'currentBalance': '400.00',
+          },
+        ],
+      },
+    ];
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          accountsProvider.overrideWith((ref) => Future.value(mockAccounts)),
+        ],
+        child: const MaterialApp(
+          home: AccountsPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify net worth banner and account name
+    expect(find.text('AGGREGATED NET WORTH'), findsOneWidget);
+    expect(find.text('Main Bank'), findsOneWidget);
+    expect(find.text('2 wallets'), findsNWidgets(2));
+    expect(find.text('Checking Account'), findsOneWidget);
+    expect(find.text('Emergency Cash'), findsOneWidget);
+  });
+
+  testWidgets('LoginPage renders without error or overflow', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith(FakeAuthController.new),
+        ],
+        child: const MaterialApp(
+          home: LoginPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Money Tracker'), findsOneWidget);
+    expect(find.text('AES-256 Encrypted Local Tokens'), findsOneWidget);
+  });
+
+  testWidgets('RegisterPage renders without error or overflow', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authProvider.overrideWith(FakeAuthController.new),
+        ],
+        child: const MaterialApp(
+          home: RegisterPage(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Create Account'), findsOneWidget);
+  });
+}
+
+class FakeAuthController extends AuthController {
+  @override
+  Future<Map<String, dynamic>?> build() async => null;
 }

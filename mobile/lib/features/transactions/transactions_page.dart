@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/money.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
+import '../../core/widgets/amount_display.dart';
+import '../../core/widgets/luxury_card.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
   const TransactionsPage({super.key});
@@ -72,145 +75,312 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final month = ref.watch(selectedPeriodProvider);
     final query = HistoryQuery(month.year, month.month, type);
     final history = ref.watch(pagedTransactionsProvider(query));
+
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            const Text('Activity'),
-            Text(
-              '${_monthName(month.month)} ${month.year}',
-              style: Theme.of(context).textTheme.bodySmall,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: _header(context, month),
+            ),
+            _filterChips(),
+            Expanded(
+              child: history.when(
+                data: (historyData) => historyData.items.isEmpty
+                    ? _empty(context)
+                    : RefreshIndicator(
+                        color: AppColors.midnight,
+                        onRefresh: () async =>
+                            ref.invalidate(pagedTransactionsProvider(query)),
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 150),
+                          itemCount:
+                              historyData.items.length +
+                              (historyData.isLoadingMore ||
+                                      historyData.loadMoreError != null
+                                  ? 1
+                                  : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= historyData.items.length) {
+                              if (historyData.loadMoreError != null) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Center(
+                                    child: TextButton.icon(
+                                      onPressed: () => ref
+                                          .read(
+                                            pagedTransactionsProvider(query).notifier,
+                                          )
+                                          .loadMore(),
+                                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                                      label: const Text('Could not load more — retry'),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const Padding(
+                                padding: EdgeInsets.all(18),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.midnight,
+                                  ),
+                                ),
+                              );
+                            }
+                            return _row(context, historyData.items[index]);
+                          },
+                        ),
+                      ),
+                error: (error, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline_rounded,
+                            size: 36, color: AppColors.crimson),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Could not load history',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          error.toString(),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.midnight,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: () => shiftMonth(-1),
-            icon: const Icon(Icons.chevron_left_rounded),
-            tooltip: 'Previous month',
-          ),
-          IconButton(
-            onPressed: () => shiftMonth(1),
-            icon: const Icon(Icons.chevron_right_rounded),
-            tooltip: 'Next month',
-          ),
-          IconButton(
-            onPressed: () => context.push('/transfers'),
-            icon: const Icon(Icons.swap_horiz_rounded),
-            tooltip: 'Transfer history',
-          ),
-          PopupMenuButton<String?>(
-            onSelected: (value) => setState(() => type = value),
-            icon: const Icon(Icons.filter_list_rounded),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: null, child: Text('All activity')),
-              PopupMenuItem(
-                value: 'DYNAMIC_SPENDING',
-                child: Text('Dynamic spending'),
-              ),
-              PopupMenuItem(
-                value: 'STATIC_SPENDING',
-                child: Text('Recurring spending'),
-              ),
-              PopupMenuItem(value: 'MAIN_INCOME', child: Text('Main income')),
-              PopupMenuItem(
-                value: 'ADDITIONAL_INCOME',
-                child: Text('Additional income'),
-              ),
-            ],
-          ),
-        ],
       ),
-      body: history.when(
-        data: (history) => history.items.isEmpty
-            ? _empty(context)
-            : RefreshIndicator(
-                onRefresh: () async =>
-                    ref.invalidate(pagedTransactionsProvider(query)),
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-                  itemCount:
-                      history.items.length +
-                      (history.isLoadingMore || history.loadMoreError != null
-                          ? 1
-                          : 0),
-                  itemBuilder: (context, index) {
-                    if (index >= history.items.length) {
-                      if (history.loadMoreError != null) {
-                        return TextButton(
-                          onPressed: () => ref
-                              .read(pagedTransactionsProvider(query).notifier)
-                              .loadMore(),
-                          child: const Text('Could not load more — retry'),
-                        );
-                      }
-                      return const Padding(
-                        padding: EdgeInsets.all(18),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: _row(context, history.items[index]),
-                    );
-                  },
+    );
+  }
+
+  Widget _header(BuildContext context, DateTime month) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Activity Ledger',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.midnight,
+                letterSpacing: -0.5,
+              ),
+            ),
+            Text(
+              '${_monthName(month.month)} ${month.year}',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.emerald,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => shiftMonth(-1),
+                    icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Previous month',
+                  ),
+                  IconButton(
+                    onPressed: () => shiftMonth(1),
+                    icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Next month',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () => context.push('/transfers'),
+              icon: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: const Icon(
+                  Icons.swap_horiz_rounded,
+                  color: AppColors.indigo,
+                  size: 20,
                 ),
               ),
-        error: (error, _) =>
-            Center(child: Text('Could not load history: $error')),
-        loading: () => const Center(child: CircularProgressIndicator()),
+              tooltip: 'Transfers',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _filterChips() {
+    final filters = [
+      (label: 'All Activity', value: null),
+      (label: 'Spending', value: 'DYNAMIC_SPENDING'),
+      (label: 'Recurring', value: 'STATIC_SPENDING'),
+      (label: 'Main Income', value: 'MAIN_INCOME'),
+      (label: 'Extra Income', value: 'ADDITIONAL_INCOME'),
+    ];
+
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final item = filters[index];
+          final isSelected = type == item.value;
+          return ChoiceChip(
+            label: Text(item.label),
+            selected: isSelected,
+            onSelected: (_) => setState(() => type = item.value),
+          );
+        },
       ),
     );
   }
 
   Widget _row(BuildContext context, TransactionItem item) {
     final income = item.transactionType.contains('INCOME');
-    final color = income ? Colors.green : Colors.red;
+    final color = income ? AppColors.emerald : AppColors.crimson;
     final detail = [
       item.transactionDate,
       item.walletName ?? item.currencyCode,
     ].where((value) => value.isNotEmpty).join(' • ');
+
+    final iconData = income
+        ? (item.transactionType == 'MAIN_INCOME'
+            ? Icons.account_balance_outlined
+            : Icons.south_west_rounded)
+        : (item.transactionType == 'STATIC_SPENDING'
+            ? Icons.event_repeat_rounded
+            : Icons.shopping_bag_outlined);
+
     return Dismissible(
       key: ValueKey(item.id),
+      direction: DismissDirection.endToStart,
       background: Container(
-        color: Theme.of(context).colorScheme.error,
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: AppColors.crimson,
+          borderRadius: BorderRadius.circular(18),
+        ),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        padding: const EdgeInsets.only(right: 22),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 6),
+            Text(
+              'Void',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
       ),
       confirmDismiss: (_) => _confirmVoid(context, item),
-      child: Card(
-        child: ListTile(
-          onTap: () => context.push(
-            '/add?type=${item.transactionType}&transactionId=${item.id}',
-          ),
-          leading: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .11),
-              shape: BoxShape.circle,
+      child: LuxuryCard(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        onTap: () => context.push(
+          '/add?type=${item.transactionType}&transactionId=${item.id}',
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(iconData, color: color, size: 20),
             ),
-            child: Icon(
-              income ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: color,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.description?.isNotEmpty == true
+                        ? item.description!
+                        : item.transactionType.replaceAll('_', ' '),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.midnight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    detail,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          title: Text(
-            item.description?.isNotEmpty == true
-                ? item.description!
-                : item.transactionType,
-          ),
-          subtitle: Text(detail),
-          trailing: Text(
-            signedMoney(
-              income ? item.amount : '-${item.amount}',
+            AmountDisplay(
+              amount: income ? item.amount : '-${item.amount}',
               currency: item.currencyCode,
+              fontSize: 14,
+              isSigned: true,
+              isIncome: income,
             ),
-            style: TextStyle(color: color, fontWeight: FontWeight.bold),
-          ),
+          ],
         ),
       ),
     );
@@ -223,26 +393,42 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 74,
-            height: 74,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
+              color: AppColors.cardSurfaceAlt,
               shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border),
             ),
-            child: const Icon(Icons.auto_graph_rounded, size: 32),
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              size: 32,
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: 18),
-          Text('A clean slate', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'No transactions recorded',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.midnight,
+            ),
+          ),
           const SizedBox(height: 6),
-          const Text(
-            'No activity recorded for this month yet.',
+          Text(
+            'Keep track of your cash flows by recording your first transaction.',
             textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           FilledButton.icon(
             onPressed: () => context.push('/add?type=DYNAMIC_SPENDING'),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add activity'),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add transaction'),
           ),
         ],
       ),
@@ -274,9 +460,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Void transaction?'),
+        title: const Text('Void Transaction?'),
         content: const Text(
-          'This will reverse the transaction and update the wallet balance.',
+          'This will permanently reverse the transaction and restore the original wallet balance.',
         ),
         actions: [
           TextButton(
@@ -284,6 +470,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.crimson),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Void'),
           ),

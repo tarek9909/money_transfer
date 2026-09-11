@@ -1,11 +1,19 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_client.dart';
+import 'item_preset.dart';
 import 'models.dart';
 
 final tokenStoreProvider = Provider<TokenStore>(
-  (ref) => const TokenStore(FlutterSecureStorage()),
+  (ref) => TokenStore(
+    const FlutterSecureStorage(
+      aOptions: AndroidOptions(
+        encryptedSharedPreferences: true,
+      ),
+    ),
+  ),
 );
 final apiClientProvider = Provider<ApiClient>(
   (ref) => ApiClient(
@@ -98,6 +106,70 @@ final preferencesProvider = FutureProvider<Map<String, dynamic>>(
 );
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
   (ref) => SharedPreferences.getInstance(),
+);
+
+class PresetsNotifier extends StateNotifier<List<ItemPreset>> {
+  PresetsNotifier(this._ref) : super(defaultItemPresets) {
+    _load();
+  }
+
+  final Ref _ref;
+  static const _storageKey = 'user_item_presets_v1';
+
+  Future<void> _load() async {
+    try {
+      final prefs = await _ref.read(sharedPreferencesProvider.future);
+      final raw = prefs.getString(_storageKey);
+      if (raw != null && raw.isNotEmpty) {
+        final list = jsonDecode(raw) as List<dynamic>;
+        final loaded = list
+            .map((e) => ItemPreset.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        if (loaded.isNotEmpty) {
+          state = loaded;
+        }
+      }
+    } catch (_) {
+      // Fall back to default presets
+    }
+  }
+
+  Future<void> savePreset(ItemPreset preset) async {
+    final existingIndex = state.indexWhere(
+      (p) => p.id == preset.id || p.title.toLowerCase() == preset.title.toLowerCase(),
+    );
+    List<ItemPreset> updated;
+    if (existingIndex >= 0) {
+      updated = [...state];
+      updated[existingIndex] = preset;
+    } else {
+      updated = [preset, ...state];
+    }
+    state = updated;
+    await _persist();
+  }
+
+  Future<void> deletePreset(String id) async {
+    state = state.where((p) => p.id != id).toList();
+    await _persist();
+  }
+
+  Future<void> resetDefaults() async {
+    state = List.from(defaultItemPresets);
+    await _persist();
+  }
+
+  Future<void> _persist() async {
+    try {
+      final prefs = await _ref.read(sharedPreferencesProvider.future);
+      final encoded = jsonEncode(state.map((p) => p.toJson()).toList());
+      await prefs.setString(_storageKey, encoded);
+    } catch (_) {}
+  }
+}
+
+final presetsProvider = StateNotifierProvider<PresetsNotifier, List<ItemPreset>>(
+  (ref) => PresetsNotifier(ref),
 );
 
 final selectedPeriodProvider = StateProvider<DateTime>(

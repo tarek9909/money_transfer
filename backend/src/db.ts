@@ -12,6 +12,8 @@ export const pool = mysql.createPool({
   decimalNumbers: false,
   namedPlaceholders: false,
   timezone: 'Z',
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
 });
 
 export async function withTransaction<T>(fn: (connection: PoolConnection) => Promise<T>): Promise<T> {

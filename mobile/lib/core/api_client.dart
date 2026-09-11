@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 class ApiException implements Exception {
@@ -71,18 +72,63 @@ String _moneyForApi(
 }
 
 class TokenStore {
-  const TokenStore(this.storage);
+  TokenStore(this.storage);
   final FlutterSecureStorage storage;
   static const accessKey = 'access_token';
   static const refreshKey = 'refresh_token';
 
-  Future<String?> get accessToken => storage.read(key: accessKey);
-  Future<String?> get refreshToken => storage.read(key: refreshKey);
+  String? _cachedAccessToken;
+  String? _cachedRefreshToken;
+
+  Future<String?> get accessToken async {
+    if (_cachedAccessToken != null && _cachedAccessToken!.isNotEmpty) {
+      return _cachedAccessToken;
+    }
+    try {
+      final val = await storage.read(key: accessKey);
+      if (val != null && val.isNotEmpty) {
+        _cachedAccessToken = val;
+        return val;
+      }
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final val = prefs.getString(accessKey);
+      if (val != null && val.isNotEmpty) {
+        _cachedAccessToken = val;
+        return val;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<String?> get refreshToken async {
+    if (_cachedRefreshToken != null && _cachedRefreshToken!.isNotEmpty) {
+      return _cachedRefreshToken;
+    }
+    try {
+      final val = await storage.read(key: refreshKey);
+      if (val != null && val.isNotEmpty) {
+        _cachedRefreshToken = val;
+        return val;
+      }
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final val = prefs.getString(refreshKey);
+      if (val != null && val.isNotEmpty) {
+        _cachedRefreshToken = val;
+        return val;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<void> save(Map<String, dynamic> session) async {
-    final access = session['accessToken'];
-    final refresh = session['refreshToken'];
-    if (access is! String ||
-        refresh is! String ||
+    final access = session['accessToken']?.toString();
+    final refresh = session['refreshToken']?.toString();
+    if (access == null ||
+        refresh == null ||
         access.isEmpty ||
         refresh.isEmpty) {
       throw ApiException(
@@ -90,33 +136,60 @@ class TokenStore {
         'INVALID_SESSION',
       );
     }
-    await storage.write(key: accessKey, value: access);
-    await storage.write(key: refreshKey, value: refresh);
+    _cachedAccessToken = access;
+    _cachedRefreshToken = refresh;
+    try {
+      await storage.write(key: accessKey, value: access);
+      await storage.write(key: refreshKey, value: refresh);
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(accessKey, access);
+      await prefs.setString(refreshKey, refresh);
+    } catch (_) {}
   }
 
   Future<void> saveSession(Session session) => save(session.toJson());
 
   Future<void> clear() async {
-    await storage.delete(key: accessKey);
-    await storage.delete(key: refreshKey);
+    _cachedAccessToken = null;
+    _cachedRefreshToken = null;
+    try {
+      await storage.delete(key: accessKey);
+      await storage.delete(key: refreshKey);
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(accessKey);
+      await prefs.remove(refreshKey);
+    } catch (_) {}
   }
 }
 
 class ApiClient {
-  ApiClient(this.tokens, {this.onSessionExpired}) {
-    final baseUrl = const String.fromEnvironment(
-      'API_BASE_URL',
-      defaultValue: 'http://10.0.2.2:3000/api/v1',
-    );
+  static const String defaultBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.10.127:4050/api/v1',
+  );
+
+  static const List<String> fallbackUrls = [
+    'http://192.168.10.127:4050/api/v1',
+    'http://127.0.0.1:4050/api/v1',
+    'http://10.0.2.2:4050/api/v1',
+    'http://localhost:4050/api/v1',
+  ];
+
+  ApiClient(this.tokens, {this.onSessionExpired, String? baseUrl}) {
+    final effectiveBaseUrl = baseUrl ?? defaultBaseUrl;
     if (const bool.fromEnvironment('dart.vm.product') &&
-        !baseUrl.startsWith('https://')) {
+        !effectiveBaseUrl.startsWith('https://')) {
       throw StateError('Release builds require an HTTPS API_BASE_URL');
     }
     dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 20),
+        baseUrl: effectiveBaseUrl,
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 15),
         headers: {'content-type': 'application/json'},
       ),
     );
@@ -141,12 +214,73 @@ class ApiClient {
         },
       ),
     );
+    Future.microtask(initBaseUrl);
   }
 
   final TokenStore tokens;
   final void Function()? onSessionExpired;
   late final Dio dio;
   Future<void>? _refreshOperation;
+
+  String get currentBaseUrl => dio.options.baseUrl;
+
+  void updateBaseUrl(String newUrl) {
+    dio.options.baseUrl = newUrl;
+  }
+
+  Future<void> saveBaseUrl(String url) async {
+    updateBaseUrl(url);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('api_base_url', url);
+    } catch (_) {}
+  }
+
+  Future<void> initBaseUrl() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('api_base_url');
+      if (saved != null && saved.trim().isNotEmpty) {
+        dio.options.baseUrl = saved.trim();
+        return;
+      }
+    } catch (_) {}
+  }
+
+  Future<bool> testConnection([String? url]) async {
+    try {
+      final base = (url ?? dio.options.baseUrl).trim();
+      final healthUrl = base.endsWith('/api/v1')
+          ? base.replaceAll(RegExp(r'/api/v1$'), '/health')
+          : (base.endsWith('/') ? '${base}health' : '$base/health');
+      final probeDio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
+        ),
+      );
+      final res = await probeDio.get(healthUrl);
+      return res.statusCode == 200 &&
+          res.data is Map &&
+          res.data['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> autoDiscoverWorkingUrl() async {
+    if (await testConnection(dio.options.baseUrl)) {
+      return dio.options.baseUrl;
+    }
+    for (final candidate in fallbackUrls) {
+      if (candidate == dio.options.baseUrl) continue;
+      if (await testConnection(candidate)) {
+        await saveBaseUrl(candidate);
+        return candidate;
+      }
+    }
+    return null;
+  }
 
   Future<void> _refreshWithLock() async {
     final existing = _refreshOperation;
@@ -170,6 +304,12 @@ class ApiClient {
   }) async {
     try {
       final token = authenticated ? await tokens.accessToken : null;
+      if (authenticated && (token == null || token.isEmpty)) {
+        throw UnauthorizedException(
+          'Authentication is required',
+          'UNAUTHORIZED',
+        );
+      }
       final response = await dio.request<dynamic>(
         path,
         options: Options(
@@ -181,6 +321,21 @@ class ApiClient {
       );
       return response.data;
     } on DioException catch (error) {
+      if (retry &&
+          (error.type == DioExceptionType.connectionError ||
+              error.type == DioExceptionType.connectionTimeout)) {
+        final newUrl = await autoDiscoverWorkingUrl();
+        if (newUrl != null) {
+          return _request(
+            method,
+            path,
+            data: data,
+            query: query,
+            authenticated: authenticated,
+            retry: false,
+          );
+        }
+      }
       if (authenticated && retry && error.response?.statusCode == 401) {
         final refreshToken = await tokens.refreshToken;
         if (refreshToken != null) {

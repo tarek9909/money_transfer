@@ -1,8 +1,13 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/money.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
+import '../../core/widgets/luxury_card.dart';
+import '../../core/widgets/status_badge.dart';
 
 class StaticExpensesPage extends ConsumerStatefulWidget {
   const StaticExpensesPage({super.key});
@@ -26,63 +31,161 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
     final month = ref.watch(selectedPeriodProvider);
     final query = MonthQuery(month.year, month.month);
     final state = ref.watch(staticExpensesProvider(query));
+
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
           children: [
-            const Text('Recurring expenses'),
-            Text(
-              '${_staticMonthName(month.month)} ${month.year}',
-              style: Theme.of(context).textTheme.bodySmall,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recurring Bills',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.midnight,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      Text(
+                        '${_staticMonthName(month.month)} ${month.year}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.amber,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => shiftMonth(-1),
+                              icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Previous month',
+                            ),
+                            IconButton(
+                              onPressed: () => shiftMonth(1),
+                              icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Next month',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: () => _newTemplate(context),
+                        icon: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.midnight,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.add_rounded,
+                              color: Colors.white, size: 20),
+                        ),
+                        tooltip: 'Add Template',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: state.when(
+                data: (data) {
+                  final occurrences = data.occurrences;
+                  return DefaultTabController(
+                    length: 2,
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardSurfaceAlt,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: TabBar(
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            indicator: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: AppShadows.card,
+                            ),
+                            labelColor: AppColors.midnight,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            labelStyle: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            tabs: const [
+                              Tab(text: 'Occurrences'),
+                              Tab(text: 'Templates'),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _occurrenceList(context, occurrences, query),
+                              _templateList(context, data.templates, query),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                error: (error, _) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error_outline_rounded,
+                            color: AppColors.crimson, size: 36),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Could not load recurring commitments: $error',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.midnight,
+                    strokeWidth: 2.5,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: () => shiftMonth(-1),
-            icon: const Icon(Icons.chevron_left_rounded),
-            tooltip: 'Previous month',
-          ),
-          IconButton(
-            onPressed: () => shiftMonth(1),
-            icon: const Icon(Icons.chevron_right_rounded),
-            tooltip: 'Next month',
-          ),
-          IconButton(
-            onPressed: () => _newTemplate(context),
-            icon: const Icon(Icons.add_rounded),
-          ),
-        ],
-      ),
-      body: state.when(
-        data: (data) {
-          final occurrences = data.occurrences;
-          return DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'Occurrences'),
-                    Tab(text: 'Templates'),
-                  ],
-                ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _occurrenceList(context, occurrences, query),
-                      _templateList(context, data.templates, query),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        error: (error, _) =>
-            Center(child: Text('Could not load static spending: $error')),
-        loading: () => const Center(child: CircularProgressIndicator()),
       ),
     );
   }
@@ -91,88 +194,152 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
     BuildContext context,
     List<StaticExpenseOccurrence> occurrences,
     MonthQuery query,
-  ) => occurrences.isEmpty
-      ? Center(
+  ) {
+    if (occurrences.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('No recurring expenses for this month.'),
-              const SizedBox(height: 12),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.amberSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.event_repeat_rounded,
+                  color: AppColors.amber,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'No recurring bills this month',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.midnight,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Create templates for rent, subscriptions, or fixed monthly commitments.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: () => _newTemplate(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Create template'),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Create Template'),
               ),
             ],
           ),
-        )
-      : RefreshIndicator(
-          onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-            children: occurrences
-                .map((item) => _occurrence(context, item, query))
-                .toList(),
-          ),
-        );
+        ),
+      );
+    }
 
-  Widget _templateList(
-    BuildContext context,
-    List<StaticExpenseTemplate> templates,
-    MonthQuery query,
-  ) => templates.isEmpty
-      ? Center(
-          child: FilledButton.icon(
-            onPressed: () => _newTemplate(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Create template'),
-          ),
-        )
-      : ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 112),
-          children: templates
-              .map(
-                (item) => Card(
-                  child: ListTile(
-                    title: Text(item.name),
-                    subtitle: Text(
-                      '${moneyValue(item.amount)} · ${item.accountName} · due ${item.dueDay}',
+    // Summary calculations
+    var totalCommitted = Decimal.zero;
+    var totalPaid = Decimal.zero;
+    for (final occ in occurrences) {
+      totalCommitted += occ.expectedAmount;
+      if (occ.status == 'PAID') {
+        totalPaid += occ.expectedAmount;
+      }
+    }
+
+    return RefreshIndicator(
+      color: AppColors.midnight,
+      onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
+        children: [
+          TitaniumCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'MONTHLY COMMITMENTS',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (value) async {
-                        if (value == 'edit') {
-                          await _editTemplate(context, item, query);
-                        } else if (value == 'archive') {
-                          try {
-                            await ref
-                                .read(apiClientProvider)
-                                .archiveTemplate(item.id);
-                            ref.invalidate(staticExpensesProvider(query));
-                          } catch (error) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(error.toString())),
-                              );
-                            }
-                          }
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Edit template'),
+                    StatusBadge(
+                      label: '${occurrences.where((o) => o.status == 'PAID').length}/${occurrences.length} Paid',
+                      variant: BadgeVariant.warning,
+                      compact: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Expected',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
                         ),
-                        PopupMenuItem(
-                          value: 'archive',
-                          child: Text('Archive template'),
+                        Text(
+                          moneyValue(totalCommitted),
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Paid So Far',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          moneyValue(totalPaid),
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppColors.mint,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              )
-              .toList(),
-        );
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          ...occurrences.map((item) => _occurrence(context, item, query)),
+        ],
+      ),
+    );
+  }
 
   Widget _occurrence(
     BuildContext context,
@@ -180,66 +347,233 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
     MonthQuery query,
   ) {
     final status = item.status;
-    final statusColor = status == 'PAID'
-        ? Colors.green
-        : status == 'SKIPPED'
-        ? Colors.grey
-        : Theme.of(context).colorScheme.tertiary;
-    return Card(
-      child: ListTile(
-        title: Text(item.name),
-        subtitle: Text(
-          '${item.dueDate} · ${item.accountName ?? item.accountId}',
-        ),
-        leading: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: statusColor.withValues(alpha: .12),
-            borderRadius: BorderRadius.circular(14),
+    final isPaid = status == 'PAID';
+    final isSkipped = status == 'SKIPPED';
+    final isPending = status == 'PENDING';
+
+    final (statusLabel, statusVariant) = isPaid
+        ? ('Paid', BadgeVariant.income)
+        : isSkipped
+        ? ('Skipped', BadgeVariant.neutral)
+        : ('Pending', BadgeVariant.warning);
+
+    final amountStr = item.currencyCode == null
+        ? item.expectedAmount.toStringAsFixed(2)
+        : moneyValue(item.expectedAmount, currency: item.currencyCode!);
+
+    return LuxuryCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isPaid
+                  ? AppColors.mintSoft
+                  : (isSkipped ? AppColors.cardSurfaceAlt : AppColors.amberSoft),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              isPaid
+                  ? Icons.check_circle_rounded
+                  : (isSkipped
+                      ? Icons.skip_next_rounded
+                      : Icons.schedule_rounded),
+              color: isPaid
+                  ? AppColors.emerald
+                  : (isSkipped ? AppColors.textTertiary : AppColors.amber),
+              size: 22,
+            ),
           ),
-          child: Icon(
-            status == 'PAID'
-                ? Icons.check_rounded
-                : status == 'SKIPPED'
-                ? Icons.skip_next_rounded
-                : Icons.schedule_rounded,
-            color: statusColor,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.midnight,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    StatusBadge(
+                      label: statusLabel,
+                      variant: statusVariant,
+                      compact: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Due: ${item.dueDate} · ${item.accountName ?? item.accountId}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 10),
+          if (isPending) ...[
+            if (_processing.contains(item.id))
+              const SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    amountStr,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.midnight,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded,
+                        color: AppColors.textTertiary, size: 20),
+                    onSelected: (value) => value == 'pay'
+                        ? _pay(item, query)
+                        : _skip(item, query),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'pay', child: Text('Mark Paid')),
+                      PopupMenuItem(value: 'skip', child: Text('Skip')),
+                    ],
+                  ),
+                ],
+              ),
+          ] else
+            Text(
+              amountStr,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: isPaid ? AppColors.emerald : AppColors.textTertiary,
+                decoration: isSkipped ? TextDecoration.lineThrough : null,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _templateList(
+    BuildContext context,
+    List<StaticExpenseTemplate> templates,
+    MonthQuery query,
+  ) {
+    if (templates.isEmpty) {
+      return Center(
+        child: FilledButton.icon(
+          onPressed: () => _newTemplate(context),
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: const Text('Create Template'),
         ),
-        trailing: status == 'PENDING'
-            ? _processing.contains(item.id)
-                  ? const SizedBox.square(
-                      dimension: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Wrap(
-                      spacing: 4,
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
+      children: templates
+          .map(
+            (item) => LuxuryCard(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.amberSoft,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.event_repeat_rounded,
+                      color: AppColors.amber,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.currencyCode == null
-                              ? item.expectedAmount.toStringAsFixed(2)
-                              : moneyValue(
-                                  item.expectedAmount,
-                                  currency: item.currencyCode!,
-                                ),
+                          item.name,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.midnight,
+                          ),
                         ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) => value == 'pay'
-                              ? _pay(item, query)
-                              : _skip(item, query),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'pay',
-                              child: Text('Mark paid'),
-                            ),
-                            PopupMenuItem(value: 'skip', child: Text('Skip')),
-                          ],
+                        const SizedBox(height: 2),
+                        Text(
+                          '${item.accountName} · Due day ${item.dueDay}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
-                    )
-            : Text(status),
-      ),
+                    ),
+                  ),
+                  Text(
+                    moneyValue(item.amount),
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.midnight,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded,
+                        color: AppColors.textTertiary, size: 20),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        await _editTemplate(context, item, query);
+                      } else if (value == 'archive') {
+                        try {
+                          await ref
+                              .read(apiClientProvider)
+                              .archiveTemplate(item.id);
+                          ref.invalidate(staticExpensesProvider(query));
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error.toString())),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'edit', child: Text('Edit template')),
+                      PopupMenuItem(
+                        value: 'archive',
+                        child: Text('Archive template'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -262,9 +596,10 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
           context: context,
           builder: (dialogContext) => StatefulBuilder(
             builder: (dialogContext, setState) => AlertDialog(
-              title: const Text('Choose payment wallet'),
+              title: const Text('Choose Payment Wallet'),
               content: DropdownButtonFormField<String>(
                 initialValue: selected,
+                decoration: const InputDecoration(labelText: 'Wallet'),
                 items: wallets.map((raw) {
                   final wallet = Map<String, dynamic>.from(raw as Map);
                   return DropdownMenuItem<String>(
@@ -285,7 +620,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                   onPressed: selected == null
                       ? null
                       : () => Navigator.pop(dialogContext, true),
-                  child: const Text('Continue'),
+                  child: const Text('Confirm Payment'),
                 ),
               ],
             ),
@@ -304,15 +639,17 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
       ref.invalidate(accountsProvider);
       ref.invalidate(walletsProvider);
       ref.invalidate(dashboardProvider);
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Expense marked paid')));
+      }
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     } finally {
       _processing.remove(item.id);
       if (mounted) setState(() {});
@@ -327,10 +664,11 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
       ref.invalidate(staticExpensesProvider(query));
       ref.invalidate(dashboardProvider);
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(error.toString())));
+      }
     } finally {
       _processing.remove(item.id);
       if (mounted) setState(() {});
@@ -391,8 +729,8 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
           return AlertDialog(
             title: Text(
               existing == null
-                  ? 'New recurring expense'
-                  : 'Edit recurring expense',
+                  ? 'New Recurring Expense'
+                  : 'Edit Recurring Expense',
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -402,6 +740,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                     controller: name,
                     decoration: const InputDecoration(labelText: 'Name'),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: amount,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -409,17 +748,20 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                     ),
                     decoration: const InputDecoration(labelText: 'Amount'),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: due,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Due day (1-31)',
+                      labelText: 'Due day of month (1-31)',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Start date'),
                     subtitle: Text(_templateDate(startDate)),
+                    trailing: const Icon(Icons.calendar_today_outlined, size: 18),
                     onTap: () async {
                       final picked = await showDatePicker(
                         context: dialogContext,
@@ -436,6 +778,12 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                     subtitle: Text(
                       endDate == null ? 'No end date' : _templateDate(endDate!),
                     ),
+                    trailing: endDate == null
+                        ? const Icon(Icons.calendar_today_outlined, size: 18)
+                        : IconButton(
+                            onPressed: () => setState(() => endDate = null),
+                            icon: const Icon(Icons.clear, size: 18),
+                          ),
                     onTap: () async {
                       final picked = await showDatePicker(
                         context: dialogContext,
@@ -445,13 +793,8 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                       );
                       if (picked != null) setState(() => endDate = picked);
                     },
-                    trailing: endDate == null
-                        ? null
-                        : IconButton(
-                            onPressed: () => setState(() => endDate = null),
-                            icon: const Icon(Icons.clear),
-                          ),
                   ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: accountId,
                     items: accounts.map((raw) {
@@ -476,6 +819,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                     },
                     decoration: const InputDecoration(labelText: 'Account'),
                   ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: walletId,
                     items: wallets
@@ -493,9 +837,10 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                         .toList(),
                     onChanged: (value) => setState(() => walletId = value),
                     decoration: const InputDecoration(
-                      labelText: 'Default wallet',
+                      labelText: 'Default Wallet',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<String?>(
                     initialValue: categoryId,
                     items: [
@@ -510,19 +855,11 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                           child: Text(item['name'].toString()),
                         );
                       }),
-                      if (categoryId != null &&
-                          !categories.any(
-                            (raw) => (raw as Map)['id'] == categoryId,
-                          ))
-                        DropdownMenuItem<String?>(
-                          value: categoryId,
-                          enabled: false,
-                          child: const Text('Archived category'),
-                        ),
                     ],
                     onChanged: (value) => setState(() => categoryId = value),
                     decoration: const InputDecoration(labelText: 'Category'),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: notes,
                     maxLines: 2,
@@ -542,8 +879,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                 onPressed: saving
                     ? null
                     : () async {
-                        if (accountId == null || name.text.trim().isEmpty)
-                          return;
+                        if (accountId == null || name.text.trim().isEmpty) return;
                         setState(() => saving = true);
                         try {
                           final data = <String, dynamic>{
@@ -570,8 +906,9 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                                 .read(apiClientProvider)
                                 .updateTemplate(existing.id, data);
                           }
-                          if (dialogContext.mounted)
+                          if (dialogContext.mounted) {
                             Navigator.pop(dialogContext, true);
+                          }
                         } catch (error) {
                           setState(() => saving = false);
                           if (context.mounted) {

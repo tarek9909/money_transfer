@@ -28,7 +28,13 @@ export function authMiddleware(pool: Pool) {
       req.auth = { userId: rows[0].public_id, userInternalId: String(rows[0].id) };
       next();
     } catch (error) {
-      next(error instanceof AppError ? error : new AppError(401, 'UNAUTHORIZED', 'Authentication is required'));
+      if (error instanceof AppError) {
+        return next(error);
+      }
+      if (error instanceof Error && (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.message.includes('token') || error.message.includes('jwt'))) {
+        return next(new AppError(401, 'UNAUTHORIZED', 'Invalid or expired authentication token'));
+      }
+      return next(error);
     }
   };
 }
@@ -36,11 +42,12 @@ export function authMiddleware(pool: Pool) {
 export function errorHandler(error: unknown, req: AuthenticatedRequest, res: Response, _next: NextFunction) {
   const normalized = publicError(error);
   if (normalized.statusCode >= 500) req.log?.error({ err: error, userId: req.auth?.userId }, normalized.message);
+  const isDev = process.env.NODE_ENV === 'development';
   res.status(normalized.statusCode).json({
     success: false,
-    message: normalized.message,
+    message: isDev && error instanceof Error ? error.message : normalized.message,
     code: normalized.code,
-    ...(normalized.details ? { details: normalized.details } : {}),
+    ...(normalized.details ? { details: normalized.details } : (isDev && error instanceof Error ? { stack: error.stack } : {})),
   });
 }
 

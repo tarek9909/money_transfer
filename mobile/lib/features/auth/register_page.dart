@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
+import '../../core/theme.dart';
+import '../../core/widgets/luxury_card.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -14,6 +17,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final email = TextEditingController();
   final password = TextEditingController();
   String currency = 'USD';
+  bool obscurePassword = true;
 
   @override
   void dispose() {
@@ -26,36 +30,45 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
-    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => context.go('/login'),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+      body: SafeArea(
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Make it yours',
-                  style: Theme.of(context).textTheme.headlineLarge,
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  'Set up your private money space in under a minute.',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 26),
-                Card(
-                  margin: EdgeInsets.zero,
-                  child: Padding(
-                    padding: const EdgeInsets.all(22),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Create Account',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.midnight,
+                      letterSpacing: -0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Set up your private financial ledger in seconds.',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  LuxuryCard(
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -63,7 +76,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           controller: name,
                           textInputAction: TextInputAction.next,
                           decoration: const InputDecoration(
-                            labelText: 'Your name',
+                            labelText: 'Your full name',
                             prefixIcon: Icon(Icons.person_outline_rounded),
                           ),
                         ),
@@ -80,14 +93,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         const SizedBox(height: 14),
                         TextField(
                           controller: password,
-                          obscureText: true,
-                          decoration: const InputDecoration(
+                          obscureText: obscurePassword,
+                          decoration: InputDecoration(
                             labelText: 'Password (10+ characters)',
-                            prefixIcon: Icon(Icons.lock_outline_rounded),
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                () => obscurePassword = !obscurePassword,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 14),
                         DropdownButtonFormField<String>(
+                          isExpanded: true,
                           initialValue: currency,
                           decoration: const InputDecoration(
                             labelText: 'Primary currency',
@@ -99,12 +124,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                               child: Text('USD · US Dollar'),
                             ),
                             DropdownMenuItem(
+                              value: 'EUR',
+                              child: Text('EUR · Euro'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'GBP',
+                              child: Text('GBP · British Pound'),
+                            ),
+                            DropdownMenuItem(
                               value: 'LBP',
                               child: Text('LBP · Lebanese Pound'),
                             ),
                             DropdownMenuItem(
-                              value: 'EUR',
-                              child: Text('EUR · Euro'),
+                              value: 'AED',
+                              child: Text('AED · UAE Dirham'),
                             ),
                           ],
                           onChanged: (value) =>
@@ -115,32 +148,55 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             padding: const EdgeInsets.only(top: 14),
                             child: Text(
                               auth.error.toString(),
-                              style: TextStyle(color: colors.error),
+                              style: GoogleFonts.plusJakartaSans(
+                                color: AppColors.crimson,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 24),
                         FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.midnight,
+                            minimumSize: const Size.fromHeight(54),
+                            elevation: 4,
+                            shadowColor:
+                                AppColors.midnight.withValues(alpha: 0.3),
+                          ),
                           onPressed: auth.isLoading ? null : _register,
                           child: auth.isLoading
                               ? const SizedBox.square(
-                                  dimension: 19,
+                                  dimension: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Create my space'),
+                              : Text(
+                                  'Create My Space',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 18),
-                TextButton(
-                  onPressed: () => context.go('/login'),
-                  child: const Text('Already have an account? Sign in'),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => context.go('/login'),
+                    child: Text(
+                      'Already have an account? Sign in',
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.midnight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
