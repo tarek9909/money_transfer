@@ -173,8 +173,16 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     final isIncome = currentType.contains('INCOME');
     final accentColor = isIncome ? AppColors.emerald : AppColors.crimson;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
+    return RefreshIndicator(
+      color: AppColors.midnight,
+      onRefresh: () async {
+        ref.invalidate(walletsProvider);
+        ref.invalidate(categoriesProvider);
+        ref.invalidate(accountsProvider);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -444,8 +452,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
           const SizedBox(height: 36),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _presetChip(int amountToAdd, Color color) {
     return ActionChip(

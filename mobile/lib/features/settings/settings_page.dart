@@ -29,9 +29,19 @@ class SettingsPage extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
-          children: [
+        child: RefreshIndicator(
+          color: AppColors.midnight,
+          onRefresh: () async {
+            ref.invalidate(authProvider);
+            ref.invalidate(preferencesProvider);
+            ref.invalidate(accountsProvider);
+            ref.invalidate(walletsProvider);
+            ref.invalidate(categoriesProvider);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
+            children: [
             Text(
               'Settings',
               style: GoogleFonts.plusJakartaSans(
@@ -262,7 +272,8 @@ class SettingsPage extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _preferences(

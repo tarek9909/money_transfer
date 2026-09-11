@@ -91,9 +91,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           color: AppColors.midnight,
           onRefresh: () async {
             ref.invalidate(dashboardProvider(query));
+            ref.invalidate(accountsProvider);
+            ref.invalidate(walletsProvider);
             await ref.read(dashboardProvider(query).future);
           },
           child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 150),
             children: [
               _topHeader(context, firstName, initials, query),

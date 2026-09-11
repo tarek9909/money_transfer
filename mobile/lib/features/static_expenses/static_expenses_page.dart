@@ -196,51 +196,58 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
     MonthQuery query,
   ) {
     if (occurrences.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.amberSoft,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.event_repeat_rounded,
-                  color: AppColors.amber,
-                  size: 34,
-                ),
+      return RefreshIndicator(
+        color: AppColors.midnight,
+        onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(32, 60, 32, 100),
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.amberSoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.event_repeat_rounded,
+                      color: AppColors.amber,
+                      size: 34,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'No recurring bills this month',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.midnight,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Create templates for rent, subscriptions, or fixed monthly commitments.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () => _newTemplate(context),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Create Template'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-              Text(
-                'No recurring bills this month',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.midnight,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Create templates for rent, subscriptions, or fixed monthly commitments.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () => _newTemplate(context),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Create Template'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
@@ -259,6 +266,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
       color: AppColors.midnight,
       onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
         children: [
           TitaniumCard(
@@ -477,103 +485,122 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
     MonthQuery query,
   ) {
     if (templates.isEmpty) {
-      return Center(
-        child: FilledButton.icon(
-          onPressed: () => _newTemplate(context),
-          icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('Create Template'),
+      return RefreshIndicator(
+        color: AppColors.midnight,
+        onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(32, 80, 32, 100),
+          children: [
+            Center(
+              child: FilledButton.icon(
+                onPressed: () => _newTemplate(context),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Create Template'),
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
-      children: templates
-          .map(
-            (item) => LuxuryCard(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.amberSoft,
-                      borderRadius: BorderRadius.circular(14),
+    return RefreshIndicator(
+      color: AppColors.midnight,
+      onRefresh: () async => ref.invalidate(staticExpensesProvider(query)),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
+        children: templates
+            .map(
+              (item) => LuxuryCard(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.amberSoft,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.event_repeat_rounded,
+                        color: AppColors.amber,
+                        size: 22,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.event_repeat_rounded,
-                      color: AppColors.amber,
-                      size: 22,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.midnight,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${item.accountName} · Due day ${item.dueDay}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            moneyValue(item.amount),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.amber,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.midnight,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${item.accountName} · Due day ${item.dueDay}',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert_rounded,
+                        color: AppColors.textTertiary,
+                      ),
+                      onSelected: (value) async {
+                        if (value == 'edit') {
+                          await _editTemplate(context, item, query);
+                          return;
+                        }
+                        if (value == 'archive') {
+                          try {
+                            await ref
+                                .read(apiClientProvider)
+                                .archiveTemplate(item.id);
+                            ref.invalidate(staticExpensesProvider(query));
+                          } catch (error) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(error.toString())),
+                              );
+                            }
+                          }
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'edit', child: Text('Edit template')),
+                        PopupMenuItem(
+                          value: 'archive',
+                          child: Text('Archive template'),
                         ),
                       ],
                     ),
-                  ),
-                  Text(
-                    moneyValue(item.amount),
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.midnight,
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded,
-                        color: AppColors.textTertiary, size: 20),
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        await _editTemplate(context, item, query);
-                      } else if (value == 'archive') {
-                        try {
-                          await ref
-                              .read(apiClientProvider)
-                              .archiveTemplate(item.id);
-                          ref.invalidate(staticExpensesProvider(query));
-                        } catch (error) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(error.toString())),
-                            );
-                          }
-                        }
-                      }
-                    },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('Edit template')),
-                      PopupMenuItem(
-                        value: 'archive',
-                        child: Text('Archive template'),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          )
-          .toList(),
+            )
+            .toList(),
+      ),
     );
   }
 

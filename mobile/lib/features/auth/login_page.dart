@@ -70,8 +70,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
           SafeArea(
             child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: RefreshIndicator(
+                color: AppColors.midnight,
+                onRefresh: () async {
+                  await ref.read(apiClientProvider).testConnection();
+                  if (mounted) setState(() {});
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
@@ -215,6 +222,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
             ),
           ),
+        ),
         ],
       ),
     );

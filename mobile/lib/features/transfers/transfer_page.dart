@@ -67,8 +67,15 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                 : (destinations.first as Map)['id'] as String;
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
+          return RefreshIndicator(
+            color: AppColors.midnight,
+            onRefresh: () async {
+              ref.invalidate(walletsProvider);
+              ref.invalidate(accountsProvider);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 48),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -380,14 +387,29 @@ class _TransferPageState extends ConsumerState<TransferPage> {
                 const SizedBox(height: 36),
               ],
             ),
-          );
-        },
-        error: (error, _) => Center(
-          child: Text(
-            'Wallets unavailable: $error',
-            style: GoogleFonts.plusJakartaSans(color: AppColors.crimson),
           ),
+        );
+      },
+      error: (error, _) => RefreshIndicator(
+        color: AppColors.midnight,
+        onRefresh: () async {
+          ref.invalidate(walletsProvider);
+          ref.invalidate(accountsProvider);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
+            const SizedBox(height: 60),
+            Center(
+              child: Text(
+                'Wallets unavailable: $error',
+                style: GoogleFonts.plusJakartaSans(color: AppColors.crimson),
+              ),
+            ),
+          ],
         ),
+      ),
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.midnight),
         ),

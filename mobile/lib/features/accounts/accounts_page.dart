@@ -70,15 +70,19 @@ class AccountsPage extends ConsumerWidget {
               ),
             ),
             Expanded(
-              child: accounts.when(
-                skipLoadingOnReload: true,
-                skipLoadingOnRefresh: true,
-                data: (items) => items.isEmpty
-                    ? _empty(context)
-                    : RefreshIndicator(
-                        color: AppColors.midnight,
-                        onRefresh: () async => ref.invalidate(accountsProvider),
-                        child: ListView(
+              child: RefreshIndicator(
+                color: AppColors.midnight,
+                onRefresh: () async {
+                  ref.invalidate(accountsProvider);
+                  ref.invalidate(walletsProvider);
+                },
+                child: accounts.when(
+                  skipLoadingOnReload: true,
+                  skipLoadingOnRefresh: true,
+                  data: (items) => items.isEmpty
+                      ? _empty(context)
+                      : ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 150),
                           children: [
                             _netWorthBanner(items),
@@ -92,34 +96,38 @@ class AccountsPage extends ConsumerWidget {
                             ),
                           ],
                         ),
-                      ),
-                error: (error, _) => Center(
-                  child: Padding(
+                  error: (error, _) => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline_rounded,
-                          color: AppColors.crimson,
-                          size: 36,
+                    children: [
+                      const SizedBox(height: 60),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: AppColors.crimson,
+                              size: 36,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Could not load accounts: $error',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Could not load accounts: $error',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-                loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.midnight,
-                    strokeWidth: 2.5,
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.midnight,
+                      strokeWidth: 2.5,
+                    ),
                   ),
                 ),
               ),
@@ -201,53 +209,56 @@ class AccountsPage extends ConsumerWidget {
     );
   }
 
-  Widget _empty(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: const BoxDecoration(
-              color: AppColors.mintSoft,
-              shape: BoxShape.circle,
+  Widget _empty(BuildContext context) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(32, 48, 32, 100),
+    children: [
+      Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: const BoxDecoration(
+                color: AppColors.mintSoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: AppColors.emerald,
+                size: 36,
+              ),
             ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              color: AppColors.emerald,
-              size: 36,
+            const SizedBox(height: 18),
+            Text(
+              'Create your first account',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.midnight,
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Create your first account',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.midnight,
+            const SizedBox(height: 6),
+            Text(
+              'Add cash, bank accounts, or digital wallets to track balances accurately.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Add cash, bank accounts, or digital wallets to track balances accurately.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => _openAddAccountDialog(context),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add Account'),
             ),
-          ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => _openAddAccountDialog(context),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add Account'),
-          ),
-          const SizedBox(height: 80),
-        ],
+            const SizedBox(height: 80),
+          ],
+        ),
       ),
-    ),
+    ],
   );
 
   Widget _account(

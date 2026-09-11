@@ -42,8 +42,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       ),
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+          child: RefreshIndicator(
+            color: AppColors.midnight,
+            onRefresh: () async {
+              await ref.read(apiClientProvider).testConnection();
+              if (mounted) setState(() {});
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
@@ -208,8 +215,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _register() async {
     await ref

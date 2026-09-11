@@ -87,14 +87,18 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             ),
             _filterChips(),
             Expanded(
-              child: history.when(
-                data: (historyData) => historyData.items.isEmpty
-                    ? _empty(context)
-                    : RefreshIndicator(
-                        color: AppColors.midnight,
-                        onRefresh: () async =>
-                            ref.invalidate(pagedTransactionsProvider(query)),
-                        child: ListView.builder(
+              child: RefreshIndicator(
+                color: AppColors.midnight,
+                onRefresh: () async {
+                  ref.invalidate(pagedTransactionsProvider(query));
+                  ref.invalidate(accountsProvider);
+                  ref.invalidate(walletsProvider);
+                },
+                child: history.when(
+                  data: (historyData) => historyData.items.isEmpty
+                      ? _empty(context)
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           controller: _scrollController,
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 150),
                           itemCount:
@@ -134,40 +138,44 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                             return _row(context, historyData.items[index]);
                           },
                         ),
-                      ),
-                error: (error, _) => Center(
-                  child: Padding(
+                  error: (error, _) => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error_outline_rounded,
-                            size: 36, color: AppColors.crimson),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Could not load history',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    children: [
+                      const SizedBox(height: 60),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline_rounded,
+                                size: 36, color: AppColors.crimson),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Could not load history',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              error.toString(),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          error.toString(),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-                loading: () => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.midnight,
-                    strokeWidth: 2.5,
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.midnight,
+                      strokeWidth: 2.5,
+                    ),
                   ),
                 ),
               ),
@@ -386,53 +394,56 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     );
   }
 
-  Widget _empty(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: AppColors.cardSurfaceAlt,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.border),
+  Widget _empty(BuildContext context) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(32, 48, 32, 100),
+    children: [
+      Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: AppColors.cardSurfaceAlt,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(
+                Icons.receipt_long_outlined,
+                size: 32,
+                color: AppColors.textSecondary,
+              ),
             ),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              size: 32,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 18),
+            Text(
+              'No transactions recorded',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.midnight,
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'No transactions recorded',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.midnight,
+            const SizedBox(height: 6),
+            Text(
+              'Keep track of your cash flows by recording your first transaction.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Keep track of your cash flows by recording your first transaction.',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => context.push('/add?type=DYNAMIC_SPENDING'),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add transaction'),
             ),
-          ),
-          const SizedBox(height: 20),
-          FilledButton.icon(
-            onPressed: () => context.push('/add?type=DYNAMIC_SPENDING'),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add transaction'),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
+    ],
   );
 
   Future<bool> _void(TransactionItem item) async {

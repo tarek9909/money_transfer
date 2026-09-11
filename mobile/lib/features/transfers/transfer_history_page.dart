@@ -31,180 +31,171 @@ class TransferHistoryPage extends ConsumerWidget {
           ),
         ],
       ),
-      body: state.when(
-        data: (items) => items.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: RefreshIndicator(
+        color: AppColors.midnight,
+        onRefresh: () async {
+          ref.invalidate(transfersProvider(query));
+          ref.invalidate(walletsProvider);
+          ref.invalidate(accountsProvider);
+        },
+        child: state.when(
+          data: (items) {
+            if (items.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(32),
+                children: [
+                  const SizedBox(height: 60),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: const BoxDecoration(
+                            color: AppColors.indigoSoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.swap_horiz_rounded,
+                            color: AppColors.indigo,
+                            size: 36,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'No transfers for this period',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.midnight,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Funds moved between your accounts will be tracked here.\nPull down to refresh anytime.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return LuxuryCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
                     children: [
                       Container(
-                        width: 72,
-                        height: 72,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: AppColors.indigoSoft,
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
                           Icons.swap_horiz_rounded,
                           color: AppColors.indigo,
-                          size: 36,
+                          size: 22,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.notes?.isNotEmpty == true
+                                  ? item.notes!
+                                  : 'Transfer',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.midnight,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${item.fromWalletName} → ${item.toWalletName}',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.transferDate,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Text(
-                        'No transfers for this period',
+                        moneyValue(item.amount, currency: item.currencyCode),
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 18,
+                          fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.midnight,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Funds moved between your accounts will be tracked here.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                          color: AppColors.indigo,
                         ),
                       ),
                     ],
                   ),
-                ),
-              )
-            : RefreshIndicator(
-                color: AppColors.midnight,
-                onRefresh: () async => ref.invalidate(transfersProvider(query)),
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return LuxuryCard(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.indigoSoft,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.swap_horiz_rounded,
-                              color: AppColors.indigo,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${item.fromWalletName} → ${item.toWalletName}',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.midnight,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${item.transferDate}${item.notes == null ? '' : ' · ${item.notes}'}',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            moneyValue(
-                              item.amount,
-                              currency: item.currencyCode,
-                            ),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.midnight,
-                            ),
-                          ),
-                          PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.more_vert_rounded,
-                              color: AppColors.textTertiary,
-                              size: 20,
-                            ),
-                            onSelected: (value) async {
-                              if (value != 'void') return;
-                              final confirmed = await showDialog<bool>(
-                                context: context,
-                                builder: (dialogContext) => AlertDialog(
-                                  title: const Text('Void Transfer?'),
-                                  content: const Text(
-                                    'This will reverse the transfer between both wallets.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(dialogContext, false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    FilledButton(
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: AppColors.crimson,
-                                      ),
-                                      onPressed: () =>
-                                          Navigator.pop(dialogContext, true),
-                                      child: const Text('Void'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirmed != true) return;
-                              try {
-                                await ref
-                                    .read(apiClientProvider)
-                                    .voidTransfer(item.id);
-                                ref.invalidate(transfersProvider(query));
-                                ref.invalidate(accountsProvider);
-                                ref.invalidate(walletsProvider);
-                                ref.invalidate(dashboardProvider);
-                              } catch (error) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(error.toString())),
-                                  );
-                                }
-                              }
-                            },
-                            itemBuilder: (_) => const [
-                              PopupMenuItem(
-                                value: 'void',
-                                child: Text('Void transfer'),
-                              ),
-                            ],
-                          ),
-                        ],
+                );
+              },
+            );
+          },
+          error: (error, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(32),
+            children: [
+              const SizedBox(height: 60),
+              Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        size: 48, color: AppColors.crimson),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Could not load transfers',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.midnight,
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '$error\n\nPull down to retry',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-        error: (error, _) => Center(
-          child: Text(
-            'Could not load transfers: $error',
-            style: GoogleFonts.plusJakartaSans(color: AppColors.crimson),
+            ],
           ),
-        ),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.midnight),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.midnight),
+          ),
         ),
       ),
     );
