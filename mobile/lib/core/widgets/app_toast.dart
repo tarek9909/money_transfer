@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 
+/// Global scaffold messenger key to safely show toasts across routes,
+/// bottom sheets, and dialogs without establishing invalid InheritedWidget dependencies.
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 /// Standard luxury floating toast/snackbar feedback for ONYX mobile app.
 abstract final class AppToast {
-  static void success(BuildContext context, String message) {
+  static void success(BuildContext? context, String message) {
     _show(
       context,
       message: message,
@@ -13,7 +18,7 @@ abstract final class AppToast {
     );
   }
 
-  static void error(BuildContext context, String message) {
+  static void error(BuildContext? context, String message) {
     final cleanMsg = message.replaceFirst('Exception: ', '').trim();
     _show(
       context,
@@ -23,7 +28,7 @@ abstract final class AppToast {
     );
   }
 
-  static void info(BuildContext context, String message) {
+  static void info(BuildContext? context, String message) {
     _show(
       context,
       message: message,
@@ -33,12 +38,15 @@ abstract final class AppToast {
   }
 
   static void _show(
-    BuildContext context, {
+    BuildContext? context, {
     required String message,
     required IconData icon,
     required Color iconColor,
   }) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final messenger = rootScaffoldMessengerKey.currentState ??
+        (context != null && context.mounted
+            ? ScaffoldMessenger.maybeOf(context)
+            : null);
     if (messenger == null) return;
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(

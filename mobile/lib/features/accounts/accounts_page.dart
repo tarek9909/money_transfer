@@ -306,6 +306,8 @@ class AccountsPage extends ConsumerWidget {
         trailing: PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert_rounded, color: AppColors.textTertiary),
           onSelected: (value) async {
+            await Future<void>.delayed(const Duration(milliseconds: 120));
+            if (!context.mounted) return;
             if (value == 'edit') {
               await _openEditAccountDialog(context, item);
               return;
@@ -417,6 +419,8 @@ class AccountsPage extends ConsumerWidget {
                     icon: const Icon(Icons.more_horiz_rounded,
                         color: AppColors.textTertiary, size: 18),
                     onSelected: (value) async {
+                      await Future<void>.delayed(const Duration(milliseconds: 120));
+                      if (!context.mounted) return;
                       if (value == 'edit') {
                         await _openEditWalletDialog(context, wallet);
                         return;

@@ -10,12 +10,14 @@ Future<T?> showAppBottomSheet<T>({
   bool isScrollControlled = true,
   bool isDismissible = true,
   bool enableDrag = true,
+  bool useRootNavigator = true,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: isScrollControlled,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
+    useRootNavigator: useRootNavigator,
     backgroundColor: Colors.transparent,
     elevation: 0,
     builder: builder,

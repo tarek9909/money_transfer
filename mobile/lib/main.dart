@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
+import 'core/widgets/app_toast.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,7 @@ class MoneyTrackerApp extends ConsumerWidget {
   const MoneyTrackerApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
+    scaffoldMessengerKey: rootScaffoldMessengerKey,
     title: 'ONYX',
     theme: appTheme(),
     routerConfig: ref.watch(routerProvider),

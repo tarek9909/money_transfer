@@ -16,8 +16,22 @@ class StaticExpensesPage extends ConsumerStatefulWidget {
   ConsumerState<StaticExpensesPage> createState() => _StaticExpensesPageState();
 }
 
-class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
+class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
   final Set<String> _processing = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   void shiftMonth(int amount) {
     final current = ref.read(selectedPeriodProvider);
@@ -114,47 +128,46 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
               child: state.when(
                 data: (data) {
                   final occurrences = data.occurrences;
-                  return DefaultTabController(
-                    length: 2,
-                    child: Column(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.cardSurfaceAlt,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: TabBar(
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            indicator: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: AppShadows.card,
-                            ),
-                            labelColor: AppColors.midnight,
-                            unselectedLabelColor: AppColors.textSecondary,
-                            labelStyle: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            tabs: const [
-                              Tab(text: 'Occurrences'),
-                              Tab(text: 'Templates'),
-                            ],
-                          ),
+                  return Column(
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.cardSurfaceAlt,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        Expanded(
-                          child: TabBarView(
-                            children: [
-                              _occurrenceList(context, occurrences, query),
-                              _templateList(context, data.templates, query),
-                            ],
+                        child: TabBar(
+                          controller: _tabController,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicator: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: AppShadows.card,
                           ),
+                          labelColor: AppColors.midnight,
+                          unselectedLabelColor: AppColors.textSecondary,
+                          labelStyle: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          tabs: const [
+                            Tab(text: 'Occurrences'),
+                            Tab(text: 'Templates'),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _occurrenceList(context, occurrences, query),
+                            _templateList(context, data.templates, query),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 },
                 error: (error, _) => Center(
@@ -455,9 +468,15 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert_rounded,
                         color: AppColors.textTertiary, size: 20),
-                    onSelected: (value) => value == 'pay'
-                        ? _pay(item, query)
-                        : _skip(item, query),
+                    onSelected: (value) async {
+                      await Future<void>.delayed(const Duration(milliseconds: 120));
+                      if (!mounted) return;
+                      if (value == 'pay') {
+                        await _pay(item, query);
+                      } else {
+                        await _skip(item, query);
+                      }
+                    },
                     itemBuilder: (_) => const [
                       PopupMenuItem(value: 'pay', child: Text('Mark Paid')),
                       PopupMenuItem(value: 'skip', child: Text('Skip')),
@@ -569,6 +588,8 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                         color: AppColors.textTertiary,
                       ),
                       onSelected: (value) async {
+                        await Future<void>.delayed(const Duration(milliseconds: 120));
+                        if (!mounted) return;
                         if (value == 'edit') {
                           await _editTemplate(context, item, query);
                           return;
@@ -589,14 +610,14 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                                 .read(apiClientProvider)
                                 .archiveTemplate(item.id);
                             ref.invalidate(staticExpensesProvider(query));
-                            if (context.mounted) {
+                            if (mounted) {
                               AppToast.success(
                                 context,
                                 'Template "${item.name}" archived',
                               );
                             }
                           } catch (error) {
-                            if (context.mounted) {
+                            if (mounted) {
                               AppToast.error(context, error.toString());
                             }
                           }
