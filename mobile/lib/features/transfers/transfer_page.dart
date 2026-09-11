@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/luxury_card.dart';
 
 class TransferPage extends ConsumerStatefulWidget {
@@ -452,9 +453,7 @@ class _TransferPageState extends ConsumerState<TransferPage> {
 
   Future<void> _save() async {
     if (from == null || to == null || amount.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose two wallets and enter an amount')),
-      );
+      AppToast.error(context, 'Choose two wallets and enter an amount');
       return;
     }
     setState(() => saving = true);
@@ -470,16 +469,12 @@ class _TransferPageState extends ConsumerState<TransferPage> {
       ref.invalidate(walletsProvider);
       ref.invalidate(dashboardProvider);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Transfer completed')));
+        AppToast.success(context, 'Transfer completed successfully');
         context.pop();
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
     } finally {
       if (mounted) setState(() => saving = false);

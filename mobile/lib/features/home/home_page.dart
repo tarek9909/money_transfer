@@ -1392,11 +1392,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           'monthlyAllowance': controller.text.trim(),
         });
         ref.invalidate(dashboardProvider);
+        if (context.mounted) {
+          AppToast.success(context, '$currency monthly spending cap updated');
+        }
       } catch (error) {
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(error.toString())));
+          AppToast.error(context, error.toString());
         }
       }
     }

@@ -457,12 +457,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       ref.invalidate(accountsProvider);
       ref.invalidate(walletsProvider);
       ref.invalidate(dashboardProvider);
+      if (mounted) {
+        AppToast.success(context, 'Transaction voided');
+      }
       return true;
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
       return false;
     }

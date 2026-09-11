@@ -7,6 +7,7 @@ import '../../core/item_preset.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/luxury_card.dart';
 import 'widgets/preset_grid_card.dart';
 import 'widgets/presets_sheet.dart';
@@ -72,9 +73,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       });
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
     }
   }
@@ -620,12 +619,9 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
         if (match != null) categoryId = match['id'].toString();
       }
     });
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Applied "${preset.title}" (\$${preset.amount.toStringAsFixed(2)})'),
-        duration: const Duration(milliseconds: 1200),
-      ),
+    AppToast.info(
+      context,
+      'Applied "${preset.title}" (\$${preset.amount.toStringAsFixed(2)})',
     );
   }
 
@@ -634,15 +630,11 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
     final title = description.text.trim();
     final amt = Decimal.tryParse(amount.text.trim());
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a description or item name to save as preset')),
-      );
+      AppToast.info(context, 'Enter a description or item name to save as preset');
       return;
     }
     if (amt == null || amt <= Decimal.zero) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid amount to save as preset')),
-      );
+      AppToast.info(context, 'Enter a valid amount to save as preset');
       return;
     }
 
@@ -655,13 +647,7 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       icon: currentType.contains('INCOME') ? '💰' : '🏷️',
     );
     ref.read(presetsProvider.notifier).savePreset(preset);
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Preset "$title" (\$${amt.toStringAsFixed(2)}) saved!'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppToast.success(context, 'Preset "$title" (\$${amt.toStringAsFixed(2)}) saved!');
   }
 
   Widget _typeTab({
@@ -722,16 +708,12 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
   Future<void> _save(bool isEdit) async {
     if (amount.text.trim().isEmpty || walletId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Amount and wallet are required')),
-      );
+      AppToast.info(context, 'Amount and wallet are required');
       return;
     }
     final parsedAmount = Decimal.tryParse(amount.text.trim());
     if (parsedAmount == null || parsedAmount <= Decimal.zero) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid positive amount')),
-      );
+      AppToast.info(context, 'Enter a valid positive amount');
       return;
     }
     setState(() => saving = true);
@@ -760,16 +742,17 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
       ref.invalidate(dashboardProvider);
       ref.invalidate(transactionsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(
+        AppToast.success(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Saved successfully')));
+          isEdit
+              ? 'Transaction updated successfully'
+              : 'Transaction recorded successfully',
+        );
         context.pop();
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
     } finally {
       if (mounted) setState(() => saving = false);

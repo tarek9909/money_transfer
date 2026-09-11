@@ -574,16 +574,30 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                           return;
                         }
                         if (value == 'archive') {
+                          final confirmed = await AppConfirmationSheet.show(
+                            context: context,
+                            title: 'Archive Template?',
+                            message:
+                                'Are you sure you want to archive "${item.name}"? Future recurring bill occurrences will not be generated.',
+                            confirmLabel: 'Archive',
+                            icon: Icons.archive_outlined,
+                            confirmColor: AppColors.amber,
+                          );
+                          if (!confirmed) return;
                           try {
                             await ref
                                 .read(apiClientProvider)
                                 .archiveTemplate(item.id);
                             ref.invalidate(staticExpensesProvider(query));
+                            if (context.mounted) {
+                              AppToast.success(
+                                context,
+                                'Template "${item.name}" archived',
+                              );
+                            }
                           } catch (error) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(error.toString())),
-                              );
+                              AppToast.error(context, error.toString());
                             }
                           }
                         }
@@ -696,15 +710,11 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
       ref.invalidate(walletsProvider);
       ref.invalidate(dashboardProvider);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Expense marked paid')));
+        AppToast.success(context, 'Marked "${item.name}" as paid');
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
     } finally {
       _processing.remove(item.id);
@@ -713,17 +723,29 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
   }
 
   Future<void> _skip(StaticExpenseOccurrence item, MonthQuery query) async {
+    final confirmed = await AppConfirmationSheet.show(
+      context: context,
+      title: 'Skip Expense?',
+      message:
+          'Are you sure you want to skip "${item.name}" for this month? It will be marked as skipped without deducting funds.',
+      confirmLabel: 'Skip',
+      icon: Icons.skip_next_rounded,
+      confirmColor: AppColors.amber,
+    );
+    if (!confirmed) return;
+
     if (!_processing.add(item.id)) return;
     setState(() {});
     try {
       await ref.read(apiClientProvider).skipOccurrence(item.id);
       ref.invalidate(staticExpensesProvider(query));
       ref.invalidate(dashboardProvider);
+      if (mounted) {
+        AppToast.success(context, 'Skipped "${item.name}" for this month');
+      }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
+        AppToast.error(context, error.toString());
       }
     } finally {
       _processing.remove(item.id);
@@ -845,9 +867,7 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                         } catch (error) {
                           setState(() => saving = false);
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(error.toString())),
-                            );
+                            AppToast.error(context, error.toString());
                           }
                         }
                       },
@@ -1009,6 +1029,14 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
         staticExpensesProvider(query ?? MonthQuery(period.year, period.month)),
       );
       ref.invalidate(dashboardProvider);
+      if (context.mounted) {
+        AppToast.success(
+          context,
+          existing == null
+              ? 'Template created successfully'
+              : 'Template updated successfully',
+        );
+      }
     }
     name.dispose();
     amount.dispose();

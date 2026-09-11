@@ -311,17 +311,31 @@ class AccountsPage extends ConsumerWidget {
               return;
             }
             if (value == 'archive') {
+              final confirmed = await AppConfirmationSheet.show(
+                context: context,
+                title: 'Archive Account?',
+                message:
+                    'Are you sure you want to archive "${item['name']}"? All associated wallets will also be archived.',
+                confirmLabel: 'Archive',
+                icon: Icons.archive_outlined,
+                confirmColor: AppColors.amber,
+              );
+              if (!confirmed) return;
               try {
                 await ref
                     .read(apiClientProvider)
                     .archiveAccount(item['id'] as String);
                 ref.invalidate(accountsProvider);
                 ref.invalidate(walletsProvider);
+                if (context.mounted) {
+                  AppToast.success(
+                    context,
+                    'Account "${item['name']}" archived',
+                  );
+                }
               } catch (error) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(error.toString())));
+                  AppToast.error(context, error.toString());
                 }
               }
             }
@@ -408,17 +422,31 @@ class AccountsPage extends ConsumerWidget {
                         return;
                       }
                       if (value != 'archive') return;
+                      final confirmed = await AppConfirmationSheet.show(
+                        context: context,
+                        title: 'Archive Wallet?',
+                        message:
+                            'Are you sure you want to archive "${wallet['name']}"?',
+                        confirmLabel: 'Archive',
+                        icon: Icons.archive_outlined,
+                        confirmColor: AppColors.amber,
+                      );
+                      if (!confirmed) return;
                       try {
                         await ref
                             .read(apiClientProvider)
                             .archiveWallet(wallet['id'] as String);
                         ref.invalidate(accountsProvider);
                         ref.invalidate(walletsProvider);
+                        if (context.mounted) {
+                          AppToast.success(
+                            context,
+                            'Wallet "${wallet['name']}" archived',
+                          );
+                        }
                       } catch (error) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error.toString())),
-                          );
+                          AppToast.error(context, error.toString());
                         }
                       }
                     },
@@ -453,40 +481,52 @@ class AccountsPage extends ConsumerWidget {
   }
 
   Future<void> _openAddAccountDialog(BuildContext context) async {
-    await showAppBottomSheet<bool>(
+    final res = await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => const _AddAccountDialog(),
     );
+    if (res == true && context.mounted) {
+      AppToast.success(context, 'Account created successfully');
+    }
   }
 
   Future<void> _openEditAccountDialog(
     BuildContext context,
     Map<String, dynamic> account,
   ) async {
-    await showAppBottomSheet<bool>(
+    final res = await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _EditAccountDialog(account: account),
     );
+    if (res == true && context.mounted) {
+      AppToast.success(context, 'Account updated successfully');
+    }
   }
 
   Future<void> _openAddWalletDialog(
     BuildContext context,
     Map<String, dynamic> account,
   ) async {
-    await showAppBottomSheet<bool>(
+    final res = await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _AddWalletDialog(account: account),
     );
+    if (res == true && context.mounted) {
+      AppToast.success(context, 'Wallet created successfully');
+    }
   }
 
   Future<void> _openEditWalletDialog(
     BuildContext context,
     Map<String, dynamic> wallet,
   ) async {
-    await showAppBottomSheet<bool>(
+    final res = await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _EditWalletDialog(wallet: wallet),
     );
+    if (res == true && context.mounted) {
+      AppToast.success(context, 'Wallet updated successfully');
+    }
   }
 }
 

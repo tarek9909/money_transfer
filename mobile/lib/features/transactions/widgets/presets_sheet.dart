@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/item_preset.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
+import '../../../core/widgets/app_bottom_sheet.dart';
 import 'preset_grid_card.dart';
 
 class PresetsSheet extends ConsumerStatefulWidget {
@@ -223,11 +224,7 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
                             widget.onSelect!(preset);
                           }
                         },
-                        onDelete: () {
-                          ref
-                              .read(presetsProvider.notifier)
-                              .deletePreset(preset.id);
-                        },
+                        onDelete: () => _deletePreset(preset),
                       );
                     },
                   )
@@ -241,9 +238,7 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
                     TextButton.icon(
                       onPressed: () {
                         ref.read(presetsProvider.notifier).resetDefaults();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Reset to default presets')),
-                        );
+                        AppToast.info(context, 'Reset to default presets');
                       },
                       icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: Text(
@@ -498,9 +493,7 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
                     size: 20,
                     color: AppColors.textTertiary,
                   ),
-                  onPressed: () {
-                    ref.read(presetsProvider.notifier).deletePreset(preset.id);
-                  },
+                  onPressed: () => _deletePreset(preset),
                   tooltip: 'Delete preset',
                   visualDensity: VisualDensity.compact,
                 ),
@@ -512,20 +505,32 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
     );
   }
 
+  Future<void> _deletePreset(ItemPreset preset) async {
+    final confirmed = await AppConfirmationSheet.show(
+      context: context,
+      title: 'Delete Preset?',
+      message: 'Are you sure you want to delete preset "${preset.title}"?',
+      confirmLabel: 'Delete',
+      icon: Icons.delete_outline_rounded,
+      confirmColor: AppColors.crimson,
+    );
+    if (!confirmed) return;
+    ref.read(presetsProvider.notifier).deletePreset(preset.id);
+    if (mounted) {
+      AppToast.success(context, 'Preset "${preset.title}" deleted');
+    }
+  }
+
   void _saveNewPreset() {
     final title = titleController.text.trim();
     final amt = Decimal.tryParse(amountController.text.trim());
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an item name')),
-      );
+      AppToast.error(context, 'Please enter an item name');
       return;
     }
     if (amt == null || amt <= Decimal.zero) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid price')),
-      );
+      AppToast.error(context, 'Please enter a valid price');
       return;
     }
 
@@ -544,8 +549,6 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
       amountController.clear();
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Preset "$title" saved!')),
-    );
+    AppToast.success(context, 'Preset "$title" saved');
   }
 }

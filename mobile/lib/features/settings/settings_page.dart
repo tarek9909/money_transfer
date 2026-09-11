@@ -349,10 +349,19 @@ class SettingsPage extends ConsumerWidget {
                 }),
               ],
               onChanged: (value) async {
-                await ref.read(apiClientProvider).updatePreferences({
-                  'defaultAccountId': value,
-                });
-                ref.invalidate(preferencesProvider);
+                try {
+                  await ref.read(apiClientProvider).updatePreferences({
+                    'defaultAccountId': value,
+                  });
+                  ref.invalidate(preferencesProvider);
+                  if (context.mounted) {
+                    AppToast.success(context, 'Default account updated');
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    AppToast.error(context, e.toString());
+                  }
+                }
               },
             ),
           ),
@@ -382,10 +391,19 @@ class SettingsPage extends ConsumerWidget {
                 }),
               ],
               onChanged: (value) async {
-                await ref.read(apiClientProvider).updatePreferences({
-                  'defaultWalletId': value,
-                });
-                ref.invalidate(preferencesProvider);
+                try {
+                  await ref.read(apiClientProvider).updatePreferences({
+                    'defaultWalletId': value,
+                  });
+                  ref.invalidate(preferencesProvider);
+                  if (context.mounted) {
+                    AppToast.success(context, 'Default wallet updated');
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    AppToast.error(context, e.toString());
+                  }
+                }
               },
             ),
           ),
@@ -418,11 +436,15 @@ class SettingsPage extends ConsumerWidget {
                     'financialMonthStart': value,
                   });
                   ref.invalidate(preferencesProvider);
+                  if (context.mounted) {
+                    AppToast.success(
+                      context,
+                      'Financial month start set to Day $value',
+                    );
+                  }
                 } catch (error) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(error.toString())));
+                    AppToast.error(context, error.toString());
                   }
                 }
               },
@@ -445,10 +467,24 @@ class SettingsPage extends ConsumerWidget {
             activeThumbColor: Colors.white,
             value: data['allowNegativeWallets'] == true,
             onChanged: (value) async {
-              await ref.read(apiClientProvider).updatePreferences({
-                'allowNegativeWallets': value,
-              });
-              ref.invalidate(preferencesProvider);
+              try {
+                await ref.read(apiClientProvider).updatePreferences({
+                  'allowNegativeWallets': value,
+                });
+                ref.invalidate(preferencesProvider);
+                if (context.mounted) {
+                  AppToast.success(
+                    context,
+                    value
+                        ? 'Negative balances allowed'
+                        : 'Strict wallet balances enabled',
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  AppToast.error(context, e.toString());
+                }
+              }
             },
           ),
         ],
@@ -519,10 +555,19 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
     if (result != null) {
-      await ref.read(apiClientProvider).updatePreferences({
-        'preferredCurrency': result,
-      });
-      ref.invalidate(preferencesProvider);
+      try {
+        await ref.read(apiClientProvider).updatePreferences({
+          'preferredCurrency': result,
+        });
+        ref.invalidate(preferencesProvider);
+        if (context.mounted) {
+          AppToast.success(context, 'Preferred currency set to $result');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppToast.error(context, e.toString());
+        }
+      }
     }
   }
 
@@ -617,11 +662,12 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 );
                 if (created == true && controller.text.trim().isNotEmpty) {
+                  final catName = controller.text.trim();
                   try {
                     final category = await ref
                         .read(apiClientProvider)
                         .createCategory({
-                          'name': controller.text.trim(),
+                          'name': catName,
                           'appliesTo': filter == 'INCOME'
                               ? 'INCOME'
                               : 'SPENDING',
@@ -629,11 +675,12 @@ class SettingsPage extends ConsumerWidget {
                     setState(() => categories.add(category));
                     ref.invalidate(categoriesProvider);
                     ref.invalidate(incomeCategoriesProvider);
+                    if (context.mounted) {
+                      AppToast.success(context, 'Category "$catName" created');
+                    }
                   } catch (error) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(error.toString())));
+                      AppToast.error(context, error.toString());
                     }
                   }
                 }
@@ -809,11 +856,12 @@ class SettingsPage extends ConsumerWidget {
                               );
                               if (edited == true &&
                                   name.text.trim().isNotEmpty) {
+                                final newName = name.text.trim();
                                 try {
                                   final updated = await ref
                                       .read(apiClientProvider)
                                       .updateCategory(item['id'] as String, {
-                                        'name': name.text.trim(),
+                                        'name': newName,
                                         'appliesTo': appliesTo,
                                       });
                                   setState(() {
@@ -822,11 +870,15 @@ class SettingsPage extends ConsumerWidget {
                                   });
                                   ref.invalidate(categoriesProvider);
                                   ref.invalidate(incomeCategoriesProvider);
+                                  if (context.mounted) {
+                                    AppToast.success(
+                                      context,
+                                      'Category "$newName" updated',
+                                    );
+                                  }
                                 } catch (error) {
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(error.toString())),
-                                    );
+                                    AppToast.error(context, error.toString());
                                   }
                                 }
                               }
@@ -836,6 +888,17 @@ class SettingsPage extends ConsumerWidget {
                           IconButton(
                             icon: const Icon(Icons.archive_outlined, size: 18),
                             onPressed: () async {
+                              final catName = item['name'].toString();
+                              final confirmed = await AppConfirmationSheet.show(
+                                context: context,
+                                title: 'Archive Category?',
+                                message:
+                                    'Are you sure you want to archive "$catName"? Existing transactions will retain this category.',
+                                confirmLabel: 'Archive',
+                                icon: Icons.archive_outlined,
+                                confirmColor: AppColors.amber,
+                              );
+                              if (!confirmed) return;
                               try {
                                 await ref
                                     .read(apiClientProvider)
@@ -843,11 +906,15 @@ class SettingsPage extends ConsumerWidget {
                                 setState(() => categories.remove(item));
                                 ref.invalidate(categoriesProvider);
                                 ref.invalidate(incomeCategoriesProvider);
+                                if (context.mounted) {
+                                  AppToast.success(
+                                    context,
+                                    'Category "$catName" archived',
+                                  );
+                                }
                               } catch (error) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(error.toString())),
-                                  );
+                                  AppToast.error(context, error.toString());
                                 }
                               }
                             },
@@ -905,6 +972,9 @@ class SettingsPage extends ConsumerWidget {
                   ref.invalidate(dashboardProvider);
                   ref.invalidate(accountsProvider);
                   ref.invalidate(walletsProvider);
+                  if (sheetContext.mounted) {
+                    AppToast.success(sheetContext, 'Backend server address updated');
+                  }
                 }
                 if (sheetContext.mounted) Navigator.pop(sheetContext);
               },
