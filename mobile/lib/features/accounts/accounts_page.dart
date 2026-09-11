@@ -776,7 +776,14 @@ class _AddWalletDialogState extends ConsumerState<_AddWalletDialog> {
   Future<void> _submit() async {
     final name = _nameController.text.trim();
     final currency = _currencyController.text.trim().toUpperCase();
-    if (name.isEmpty || currency.isEmpty) return;
+    if (name.isEmpty) {
+      setState(() => _error = 'Wallet name is required');
+      return;
+    }
+    if (currency.length != 3) {
+      setState(() => _error = 'Currency code must be 3 letters (e.g. USD, EUR, LBP)');
+      return;
+    }
 
     final initial = Decimal.tryParse(_balanceController.text.trim()) ?? Decimal.zero;
 
@@ -791,7 +798,7 @@ class _AddWalletDialogState extends ConsumerState<_AddWalletDialog> {
         'name': name,
         'walletTypeCode': _type,
         'currencyCode': currency,
-        'initialBalance': initial.toString(),
+        'openingBalance': initial.toString(),
       });
       ref.invalidate(accountsProvider);
       ref.invalidate(walletsProvider);

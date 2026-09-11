@@ -10,8 +10,21 @@ class ApiException implements Exception {
   final String code;
 
   factory ApiException.fromResponse(Map body) {
-    final message = (body['message'] ?? 'Network request failed').toString();
-    final code = (body['code'] ?? 'NETWORK_ERROR').toString();
+    var message = (body['message'] ?? 'Network request failed').toString();
+    final code = (body['code'] ?? body['error'] ?? 'NETWORK_ERROR').toString();
+    if (body['details'] is List && (body['details'] as List).isNotEmpty) {
+      final detailList = (body['details'] as List).map((d) {
+        if (d is Map) {
+          final path = (d['path'] as List?)?.join('.') ?? '';
+          final msg = d['message']?.toString() ?? '';
+          return path.isNotEmpty ? '$path: $msg' : msg;
+        }
+        return d.toString();
+      }).where((s) => s.isNotEmpty).join(', ');
+      if (detailList.isNotEmpty) {
+        message = '$message ($detailList)';
+      }
+    }
     return switch (code) {
       'UNAUTHORIZED' ||
       'INVALID_REFRESH_TOKEN' => UnauthorizedException(message, code),
@@ -614,22 +627,23 @@ class ApiClient {
     await _request('DELETE', '/accounts/$id');
   }
 
-  Future<Map<String, dynamic>> createWallet(Map<String, dynamic> data) async =>
-      Map<String, dynamic>.from(
-        await _request(
-              'POST',
-              '/wallets',
-              data: {
-                ...data,
-                if (data.containsKey('openingBalance'))
-                  'openingBalance': _moneyForApi(
-                    data['openingBalance'],
-                    field: 'Opening balance',
-                  ),
-              },
-            )
-            as Map,
-      );
+  Future<Map<String, dynamic>> createWallet(Map<String, dynamic> data) async {
+    final payload = Map<String, dynamic>.from(data);
+    final rawBalance = payload['openingBalance'] ?? payload['initialBalance'] ?? '0.00';
+    payload.remove('initialBalance');
+    payload['openingBalance'] = _moneyForApi(
+      rawBalance,
+      field: 'Opening balance',
+    );
+    return Map<String, dynamic>.from(
+      await _request(
+            'POST',
+            '/wallets',
+            data: payload,
+          )
+          as Map,
+    );
+  }
   Future<Map<String, dynamic>> updateWallet(
     String id,
     Map<String, dynamic> data,
