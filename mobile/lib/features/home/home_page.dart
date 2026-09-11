@@ -1029,24 +1029,27 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ],
               ),
-              InkWell(
-                onTap: () => PresetsSheet.show(context),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.tune_rounded, size: 14, color: AppColors.emerald),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Manage',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.emerald,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => PresetsSheet.show(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune_rounded, size: 14, color: AppColors.emerald),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Manage',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.emerald,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1061,16 +1064,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                 final color = isIncome ? AppColors.emerald : AppColors.crimson;
                 return Container(
                   margin: const EdgeInsets.only(right: 8),
-                  child: InkWell(
-                    onTap: () {
-                      final encodedDesc = Uri.encodeComponent(preset.title);
-                      final encodedAmt = preset.amount.toStringAsFixed(2);
-                      context.push(
-                        '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        final encodedDesc = Uri.encodeComponent(preset.title);
+                        final encodedAmt = preset.amount.toStringAsFixed(2);
+                        context.push(
+                          '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: AppColors.background,
@@ -1109,7 +1114,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-                );
+                ),
+              );
               }).toList(),
             ),
           ),
@@ -1126,10 +1132,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     required Color bgColor,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
           children: [
@@ -1155,7 +1163,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _recentActivity(BuildContext context, List<TransactionItem> items) {
@@ -1192,12 +1201,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 7),
-              child: InkWell(
-                onTap: () => context.push(
-                  '/add?type=${item.transactionType}&transactionId=${item.id}',
-                ),
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => context.push(
+                    '/add?type=${item.transactionType}&transactionId=${item.id}',
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
                   children: [
                     Container(
                       width: 42,
@@ -1253,7 +1264,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
-            );
+            ),
+          );
           }),
         ],
       ),

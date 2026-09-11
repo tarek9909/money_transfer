@@ -84,26 +84,29 @@ class AppShell extends StatelessWidget {
         ? 3
         : 0;
 
-    return Stack(
-      children: [
-        child,
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: SafeArea(
-            top: false,
-            child: FloatingNavDock(
-              selectedIndex: index,
-              onDestinationSelected: (value) {
-                final paths = ['/', '/transactions', '/accounts', '/settings'];
-                context.go(paths[value]);
-              },
-              onAddPressed: () => _showAddMenu(context),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          child,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: SafeArea(
+              top: false,
+              child: FloatingNavDock(
+                selectedIndex: index,
+                onDestinationSelected: (value) {
+                  final paths = ['/', '/transactions', '/accounts', '/settings'];
+                  context.go(paths[value]);
+                },
+                onAddPressed: () => _showAddMenu(context),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

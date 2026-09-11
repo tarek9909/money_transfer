@@ -10,6 +10,7 @@ import 'package:personal_money_tracker/core/providers.dart';
 import 'package:personal_money_tracker/features/accounts/accounts_page.dart';
 import 'package:personal_money_tracker/features/auth/login_page.dart';
 import 'package:personal_money_tracker/features/auth/register_page.dart';
+import 'package:personal_money_tracker/core/widgets/floating_nav_dock.dart';
 
 void main() {
   test('formats money using decimal input', () {
@@ -227,6 +228,74 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Create Account'), findsOneWidget);
+  });
+
+  testWidgets('FloatingNavDock renders all nav items without missing Material or overflow', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.625;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              const SizedBox.expand(),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: FloatingNavDock(
+                  selectedIndex: 0,
+                  onDestinationSelected: (_) {},
+                  onAddPressed: () {},
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Accounts'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('FloatingNavDock renders cleanly on narrow screen (320px width)', (tester) async {
+    tester.view.physicalSize = const Size(640, 1136);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Stack(
+            children: [
+              const SizedBox.expand(),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: FloatingNavDock(
+                  selectedIndex: 1,
+                  onDestinationSelected: (_) {},
+                  onAddPressed: () {},
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Accounts'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
   });
 }
 

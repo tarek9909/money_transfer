@@ -29,37 +29,40 @@ class FloatingNavDock extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(
-                  index: 0,
-                  icon: Icons.grid_view_outlined,
-                  selectedIcon: Icons.grid_view_rounded,
-                  label: 'Overview',
-                ),
-                _navItem(
-                  index: 1,
-                  icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long_rounded,
-                  label: 'Activity',
-                ),
-                _centerAddButton(),
-                _navItem(
-                  index: 2,
-                  icon: Icons.account_balance_wallet_outlined,
-                  selectedIcon: Icons.account_balance_wallet_rounded,
-                  label: 'Accounts',
-                ),
-                _navItem(
-                  index: 3,
-                  icon: Icons.tune_outlined,
-                  selectedIcon: Icons.tune_rounded,
-                  label: 'Settings',
-                ),
-              ],
+          child: Material(
+            color: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _navItem(
+                    index: 0,
+                    icon: Icons.grid_view_outlined,
+                    selectedIcon: Icons.grid_view_rounded,
+                    label: 'Overview',
+                  ),
+                  _navItem(
+                    index: 1,
+                    icon: Icons.receipt_long_outlined,
+                    selectedIcon: Icons.receipt_long_rounded,
+                    label: 'Activity',
+                  ),
+                  _centerAddButton(),
+                  _navItem(
+                    index: 2,
+                    icon: Icons.account_balance_wallet_outlined,
+                    selectedIcon: Icons.account_balance_wallet_rounded,
+                    label: 'Accounts',
+                  ),
+                  _navItem(
+                    index: 3,
+                    icon: Icons.tune_outlined,
+                    selectedIcon: Icons.tune_rounded,
+                    label: 'Settings',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -117,36 +120,44 @@ class FloatingNavDock extends StatelessWidget {
     final isSelected = selectedIndex == index;
     final color = isSelected ? AppColors.midnight : AppColors.textTertiary;
 
-    return InkWell(
-      onTap: () => onDestinationSelected(index),
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.mintSoft : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? selectedIcon : icon,
-              color: color,
-              size: 22,
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onDestinationSelected(index),
+          borderRadius: BorderRadius.circular(20),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.mintSoft : Colors.transparent,
+              borderRadius: BorderRadius.circular(18),
             ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: GoogleFonts.plusJakartaSans(
-                color: color,
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                letterSpacing: 0.1,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSelected ? selectedIcon : icon,
+                  color: color,
+                  size: 22,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: color,
+                    fontSize: 10,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
