@@ -745,14 +745,26 @@ class ApiClient {
   Future<Map<String, dynamic>> payOccurrence(
     String id,
     OccurrencePaymentRequest request,
-  ) async => Map<String, dynamic>.from(
-    await _request(
-          'POST',
-          '/static-expenses/occurrences/$id/pay',
-          data: request.toJson(),
-        )
-        as Map,
-  );
+  ) async {
+    final payload = <String, dynamic>{
+      if (request.walletId != null && request.walletId!.trim().isNotEmpty)
+        'walletId': request.walletId!.trim(),
+      if (request.amount != null)
+        'amount': request.amount.toString(),
+      if (request.paidAt != null && request.paidAt!.trim().isNotEmpty)
+        'paidAt': request.paidAt!.trim(),
+      if (request.notes != null && request.notes!.trim().isNotEmpty)
+        'notes': request.notes!.trim(),
+    };
+    return Map<String, dynamic>.from(
+      await _request(
+            'POST',
+            '/static-expenses/occurrences/$id/pay',
+            data: payload,
+          )
+          as Map,
+    );
+  }
   Future<void> skipOccurrence(String id) async {
     await _request('POST', '/static-expenses/occurrences/$id/skip');
   }
