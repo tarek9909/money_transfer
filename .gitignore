@@ -1,19 +1,23 @@
-# Backend
-backend/node_modules/
-backend/dist/
-backend/.env
-backend/coverage/
+# Dependencies
+node_modules/
+npm-debug.log*
 
-# Flutter/Dart
-mobile/.dart_tool/
-mobile/.packages
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/build/
-mobile/.idea/
-mobile/.metadata
+# Build and test
+dist/
+coverage/
 
-# IDE/OS
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Local mobile and docs folders (kept locally, tracked on mobile-app branch)
+mobile/
+docs/
+
+# IDE and OS files
 .vscode/
-*.iml
+.idea/
 .DS_Store
+*.log

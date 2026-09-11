@@ -1,35 +1,84 @@
-# Personal Money Tracker
+# Personal Money Tracker API
 
-End-to-end personal finance tracker with an Android Flutter client and a
-TypeScript/Express/MySQL API.
+Production-ready REST API backend for the Personal Money Tracker application. Built with Node.js, Express, TypeScript, and MySQL 8.
 
-## Repository layout
+---
 
-- [`backend/`](backend/README.md) — REST API, schema bootstrap, migrations, tests.
-- [`mobile/`](mobile/README.md) — Flutter/Riverpod client and tests.
-- Local MySQL Server is used directly; Docker is not required.
+## Features
 
-## Development
+- **Authentication & Security:** Argon2 password hashing, short-lived JWT access tokens with refresh tokens, Helmet security headers, and rate limiting.
+- **Financial Integrity:** Precise Decimal.js calculations, database-level invariants, account isolation, and transfer logs.
+- **Production Ready:** Multi-stage Dockerfile, Docker Compose stack with automated MySQL initialization and migrations, PM2 clustering, and Nginx reverse proxy configuration.
+- **Health & Monitoring:** `/health` endpoint for uptime monitoring and Docker healthchecks, structured Pino JSON logging.
 
-Install MySQL Server 8+ locally, create the `personal_money_tracker` database and
-the least-privilege user described in [`backend/README.md`](backend/README.md),
-then configure `backend/.env`. Run the development-only `backend/DB.SQL` bootstrap,
-then `npm run migrate` and `npm run dev` from `backend/`.
+---
 
-Run the checks:
+## Quick Start (Docker Compose - Recommended)
 
-```text
-cd backend
-npm run build
-npm test
+1. **Clone repository:**
+   ```bash
+   git clone https://github.com/tarek9909/money_transfer.git backend-api
+   cd backend-api
+   ```
 
-cd ../mobile
-flutter analyze
-flutter test
-flutter build apk --release --dart-define=API_BASE_URL=https://api.example.com/api/v1
-```
+2. **Configure environment:**
+   ```bash
+   cp .env.production.example .env
+   # Edit .env and set strong passwords and JWT secret
+   nano .env
+   ```
 
-Production builds must provide a real HTTPS API URL, release signing, a secure
-production JWT secret, a least-privilege database user, backups, and append-only
-migrations. Never run the clean-install SQL against production data.
-# money_transfer
+3. **Start services:**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Verify:**
+   ```bash
+   curl http://localhost:3000/health
+   # Returns: {"status":"ok"}
+   ```
+
+---
+
+## Local Development (Without Docker)
+
+1. **Install MySQL 8+ locally.**
+2. **Create the database and user:**
+   ```sql
+   CREATE DATABASE IF NOT EXISTS personal_money_tracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER IF NOT EXISTS 'money_tracker'@'127.0.0.1' IDENTIFIED BY 'change-me';
+   GRANT ALL PRIVILEGES ON personal_money_tracker.* TO 'money_tracker'@'127.0.0.1';
+   ```
+3. **Configure `.env`:**
+   ```bash
+   cp .env.example .env
+   ```
+4. **Initialize development database:**
+   ```bash
+   mysql -u root -p -e "source DB.SQL"
+   ```
+5. **Install dependencies and run migrations:**
+   ```bash
+   npm install
+   npm run migrate
+   ```
+6. **Start dev server:**
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## Production Deployment
+
+For detailed server deployment instructions (Ubuntu VPS, Docker, PM2, Systemd, Nginx, SSL certificates, and Flutter client connection), see [SERVER_DEPLOYMENT.md](SERVER_DEPLOYMENT.md).
+
+---
+
+## API Specification
+
+- Base URL: `/api/v1`
+- Standard Success Envelope: `{ "success": true, "data": { ... } }`
+- Standard Error Envelope: `{ "success": false, "message": "...", "code": "..." }`
+- Health Probe: `GET /health` (returns `{ "status": "ok" }`)
