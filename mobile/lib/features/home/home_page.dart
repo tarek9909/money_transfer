@@ -12,6 +12,7 @@ import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/onyx_logo.dart';
+import '../transactions/widgets/preset_grid_card.dart';
 import '../transactions/widgets/presets_sheet.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -1005,6 +1006,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final presets = ref.watch(presetsProvider);
     if (presets.isEmpty) return const SizedBox.shrink();
 
+    final displayedPresets = presets.length > 4 ? presets.take(4).toList() : presets;
+
     return LuxuryCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1059,70 +1062,66 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: presets.map((preset) {
-                final isIncome = preset.type.contains('INCOME');
-                final color = isIncome ? AppColors.emerald : AppColors.crimson;
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        final encodedDesc = Uri.encodeComponent(preset.title);
-                        final encodedAmt = preset.amount.toStringAsFixed(2);
-                        context.push(
-                          '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: color.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            preset.icon ?? (isIncome ? '💰' : '🏷️'),
-                            style: const TextStyle(fontSize: 15),
+          const SizedBox(height: 12),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.3,
+            ),
+            itemCount: displayedPresets.length,
+            itemBuilder: (context, index) {
+              final preset = displayedPresets[index];
+              return PresetGridCard(
+                preset: preset,
+                layout: PresetCardLayout.compact,
+                onTap: () {
+                  final encodedDesc = Uri.encodeComponent(preset.title);
+                  final encodedAmt = preset.amount.toStringAsFixed(2);
+                  context.push(
+                    '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
+                  );
+                },
+              );
+            },
+          ),
+          if (presets.length > 4) ...[
+            const SizedBox(height: 10),
+            Center(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => PresetsSheet.show(context),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'View all ${presets.length} presets',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
                           ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                preset.title,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.midnight,
-                                ),
-                              ),
-                              Text(
-                                '\$${preset.amount.toStringAsFixed(2)}',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  color: color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-              }).toList(),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

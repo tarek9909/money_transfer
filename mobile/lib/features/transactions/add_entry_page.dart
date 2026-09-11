@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/luxury_card.dart';
+import 'widgets/preset_grid_card.dart';
 import 'widgets/presets_sheet.dart';
 
 class AddEntryPage extends ConsumerStatefulWidget {
@@ -36,6 +37,8 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
   DateTime date = DateTime.now();
   bool saving = false;
   Map<String, dynamic>? existing;
+  bool _showAllPresets = false;
+  String? _selectedPresetId;
 
   @override
   void initState() {
@@ -481,6 +484,12 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
 
   Widget _quickPresetsBar(BuildContext context, List<dynamic> categories) {
     final presets = ref.watch(presetsProvider);
+    if (presets.isEmpty) return const SizedBox.shrink();
+
+    final displayedPresets = _showAllPresets
+        ? presets
+        : (presets.length > 6 ? presets.take(6).toList() : presets);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -491,8 +500,15 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
             children: [
               Row(
                 children: [
-                  const Text('⚡', style: TextStyle(fontSize: 14)),
-                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.amberSoft,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text('⚡', style: TextStyle(fontSize: 12)),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     'QUICK ITEM PRESETS',
                     style: GoogleFonts.plusJakartaSans(
@@ -504,88 +520,86 @@ class _AddEntryPageState extends ConsumerState<AddEntryPage> {
                   ),
                 ],
               ),
-              InkWell(
-                onTap: () => PresetsSheet.show(
-                  context,
-                  initialType: currentType,
-                  onSelect: (preset) => _applyPreset(preset, categories),
-                ),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.tune_rounded, size: 14, color: AppColors.emerald),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Manage',
+              Row(
+                children: [
+                  if (presets.length > 6)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _showAllPresets = !_showAllPresets;
+                        });
+                      },
+                      child: Text(
+                        _showAllPresets ? 'Show Less' : 'All (${presets.length})',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.emerald,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ],
+                    ),
+                  InkWell(
+                    onTap: () => PresetsSheet.show(
+                      context,
+                      initialType: currentType,
+                      onSelect: (preset) => _applyPreset(preset, categories),
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.tune_rounded, size: 14, color: AppColors.emerald),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Manage',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.emerald,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ...presets.map((p) => _itemPresetChip(p, categories)),
-                ActionChip(
-                  avatar: const Icon(Icons.add_rounded, size: 16, color: AppColors.midnight),
-                  label: Text(
-                    'New Preset',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.midnight,
-                    ),
-                  ),
-                  backgroundColor: Colors.white,
-                  side: const BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  onPressed: () => PresetsSheet.show(
-                    context,
-                    initialType: currentType,
-                    onSelect: (preset) => _applyPreset(preset, categories),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.3,
             ),
+            itemCount: displayedPresets.length,
+            itemBuilder: (context, index) {
+              final preset = displayedPresets[index];
+              final isSelected = _selectedPresetId == preset.id ||
+                  (description.text.trim() == preset.title &&
+                      amount.text.trim() == preset.amount.toStringAsFixed(2));
+              return PresetGridCard(
+                preset: preset,
+                layout: PresetCardLayout.compact,
+                isSelected: isSelected,
+                onTap: () {
+                  setState(() => _selectedPresetId = preset.id);
+                  _applyPreset(preset, categories);
+                },
+              );
+            },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _itemPresetChip(ItemPreset preset, List<dynamic> categories) {
-    final isIncome = preset.type.contains('INCOME');
-    final color = isIncome ? AppColors.emerald : AppColors.crimson;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ActionChip(
-        avatar: Text(
-          preset.icon ?? (isIncome ? '💰' : '🏷️'),
-          style: const TextStyle(fontSize: 14),
-        ),
-        label: Text(
-          '${preset.title} · \$${preset.amount.toStringAsFixed(2)}',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: AppColors.midnight,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        side: BorderSide(color: color.withValues(alpha: 0.3)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onPressed: () => _applyPreset(preset, categories),
       ),
     );
   }

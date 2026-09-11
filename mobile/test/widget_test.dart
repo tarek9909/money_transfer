@@ -11,6 +11,7 @@ import 'package:personal_money_tracker/features/accounts/accounts_page.dart';
 import 'package:personal_money_tracker/features/auth/login_page.dart';
 import 'package:personal_money_tracker/features/auth/register_page.dart';
 import 'package:personal_money_tracker/core/widgets/floating_nav_dock.dart';
+import 'package:personal_money_tracker/features/transactions/widgets/preset_grid_card.dart';
 
 void main() {
   test('formats money using decimal input', () {
@@ -296,6 +297,57 @@ void main() {
     expect(find.text('Activity'), findsOneWidget);
     expect(find.text('Accounts'), findsOneWidget);
     expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('PresetGridCard renders in compact and detailed grid modes with tap and delete handlers', (tester) async {
+    final preset = ItemPreset(
+      id: 'test_coffee',
+      title: 'Morning Coffee',
+      amount: Decimal.parse('4.75'),
+      type: 'DYNAMIC_SPENDING',
+      icon: '☕',
+      categoryName: 'Food & Dining',
+    );
+
+    bool tapped = false;
+    bool deleted = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              PresetGridCard(
+                preset: preset,
+                layout: PresetCardLayout.compact,
+                onTap: () => tapped = true,
+              ),
+              PresetGridCard(
+                preset: preset,
+                layout: PresetCardLayout.detailed,
+                onTap: () => tapped = true,
+                onDelete: () => deleted = true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Morning Coffee'), findsNWidgets(2));
+    expect(find.text('\$4.75'), findsNWidgets(2));
+    expect(find.text('Food & Dining'), findsOneWidget);
+
+    // Tap compact card
+    await tester.tap(find.text('Morning Coffee').first);
+    expect(tapped, isTrue);
+
+    // Tap delete icon in detailed card
+    final deleteIcon = find.byIcon(Icons.delete_outline_rounded);
+    expect(deleteIcon, findsOneWidget);
+    await tester.tap(deleteIcon);
+    expect(deleted, isTrue);
   });
 }
 

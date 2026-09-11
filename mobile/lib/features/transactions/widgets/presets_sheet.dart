@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/item_preset.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme.dart';
+import 'preset_grid_card.dart';
 
 class PresetsSheet extends ConsumerStatefulWidget {
   const PresetsSheet({
@@ -38,6 +39,7 @@ class PresetsSheet extends ConsumerStatefulWidget {
 
 class _PresetsSheetState extends ConsumerState<PresetsSheet> {
   bool isCreating = false;
+  bool isGridView = true;
   final titleController = TextEditingController();
   final amountController = TextEditingController();
   late String selectedType;
@@ -138,18 +140,43 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
                       ),
                     ],
                   ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        isCreating = !isCreating;
-                      });
-                    },
-                    icon: Icon(
-                      isCreating ? Icons.close_rounded : Icons.add_circle_outline_rounded,
-                      color: isCreating ? AppColors.textSecondary : AppColors.emerald,
-                      size: 26,
-                    ),
-                    tooltip: isCreating ? 'Cancel' : 'Create Preset',
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!isCreating && presets.isNotEmpty)
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              isGridView = !isGridView;
+                            });
+                          },
+                          icon: Icon(
+                            isGridView
+                                ? Icons.view_agenda_outlined
+                                : Icons.grid_view_rounded,
+                            color: AppColors.textSecondary,
+                            size: 22,
+                          ),
+                          tooltip: isGridView ? 'List View' : 'Grid View',
+                        ),
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            isCreating = !isCreating;
+                          });
+                        },
+                        icon: Icon(
+                          isCreating
+                              ? Icons.close_rounded
+                              : Icons.add_circle_outline_rounded,
+                          color: isCreating
+                              ? AppColors.textSecondary
+                              : AppColors.emerald,
+                          size: 26,
+                        ),
+                        tooltip: isCreating ? 'Cancel' : 'Create Preset',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -172,6 +199,37 @@ class _PresetsSheetState extends ConsumerState<PresetsSheet> {
                         ),
                       ),
                     ),
+                  )
+                else if (isGridView)
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 1.25,
+                    ),
+                    itemCount: presets.length,
+                    itemBuilder: (context, index) {
+                      final preset = presets[index];
+                      return PresetGridCard(
+                        preset: preset,
+                        layout: PresetCardLayout.detailed,
+                        onTap: () {
+                          if (widget.onSelect != null) {
+                            Navigator.of(context).pop();
+                            widget.onSelect!(preset);
+                          }
+                        },
+                        onDelete: () {
+                          ref
+                              .read(presetsProvider.notifier)
+                              .deletePreset(preset.id);
+                        },
+                      );
+                    },
                   )
                 else
                   ...presets.map((preset) => _buildPresetTile(context, preset)),

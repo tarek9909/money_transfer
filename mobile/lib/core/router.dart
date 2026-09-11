@@ -14,6 +14,7 @@ import '../features/transfers/transfer_history_page.dart';
 import '../features/settings/settings_page.dart';
 import 'providers.dart';
 import 'theme.dart';
+import '../features/transactions/widgets/preset_grid_card.dart';
 import 'widgets/floating_nav_dock.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -182,6 +183,8 @@ class AppShell extends StatelessWidget {
                   builder: (context, ref, _) {
                     final presets = ref.watch(presetsProvider);
                     if (presets.isEmpty) return const SizedBox.shrink();
+                    final displayedPresets =
+                        presets.length > 4 ? presets.take(4).toList() : presets;
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: Column(
@@ -189,8 +192,15 @@ class AppShell extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Text('⚡', style: TextStyle(fontSize: 13)),
-                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.amberSoft,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text('⚡', style: TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 'QUICK ITEM PRESETS',
                                 style: GoogleFonts.plusJakartaSans(
@@ -202,50 +212,35 @@ class AppShell extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: presets.map((preset) {
-                                final isIncome = preset.type.contains('INCOME');
-                                final color =
-                                    isIncome ? AppColors.emerald : AppColors.crimson;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: ActionChip(
-                                    avatar: Text(
-                                      preset.icon ?? (isIncome ? '💰' : '🏷️'),
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    label: Text(
-                                      '${preset.title} · \$${preset.amount.toStringAsFixed(2)}',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.midnight,
-                                      ),
-                                    ),
-                                    backgroundColor: AppColors.background,
-                                    side: BorderSide(
-                                      color: color.withValues(alpha: 0.25),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(sheetContext).pop();
-                                      final encodedDesc =
-                                          Uri.encodeComponent(preset.title);
-                                      final encodedAmt =
-                                          preset.amount.toStringAsFixed(2);
-                                      hostContext.push(
-                                        '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
-                                      );
-                                    },
-                                  ),
-                                );
-                              }).toList(),
+                          const SizedBox(height: 10),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 2.3,
                             ),
+                            itemCount: displayedPresets.length,
+                            itemBuilder: (context, index) {
+                              final preset = displayedPresets[index];
+                              return PresetGridCard(
+                                preset: preset,
+                                layout: PresetCardLayout.compact,
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  final encodedDesc =
+                                      Uri.encodeComponent(preset.title);
+                                  final encodedAmt =
+                                      preset.amount.toStringAsFixed(2);
+                                  hostContext.push(
+                                    '/add?type=${preset.type}&amount=$encodedAmt&description=$encodedDesc',
+                                  );
+                                },
+                              );
+                            },
                           ),
                           const Divider(height: 20),
                         ],
