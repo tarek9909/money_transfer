@@ -1,6 +1,10 @@
 # Backend
+node_modules/
 backend/node_modules/
+dist/
 backend/dist/
+.env
+.env.*
 backend/.env
 backend/coverage/
 
