@@ -205,7 +205,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Welcome Back'), findsOneWidget);
-    expect(find.text('Money Tracker'), findsOneWidget);
+    expect(find.text('ONYX'), findsOneWidget);
     expect(find.text('AES-256 Encrypted Local Tokens'), findsOneWidget);
   });
 

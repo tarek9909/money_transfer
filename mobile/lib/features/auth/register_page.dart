@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/luxury_card.dart';
+import '../../core/widgets/onyx_logo.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -48,6 +49,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const OnyxLogo(
+                    size: 48,
+                    showText: true,
+                    subtitle: 'Private Financial Ledger',
+                  ),
+                  const SizedBox(height: 24),
                   Text(
                     'Create Account',
                     style: GoogleFonts.plusJakartaSans(

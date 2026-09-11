@@ -10,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/amount_display.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
+import '../../core/widgets/onyx_logo.dart';
 import '../transactions/widgets/presets_sheet.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -168,13 +169,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                   letterSpacing: -0.3,
                 ),
               ),
-              Text(
-                'Personal Money Tracker',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  const OnyxLogo(size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'ONYX Private Ledger',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      color: AppColors.emerald,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

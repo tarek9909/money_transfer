@@ -21,7 +21,7 @@ class MoneyTrackerApp extends ConsumerWidget {
   const MoneyTrackerApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    title: 'Money Tracker',
+    title: 'ONYX',
     theme: appTheme(),
     routerConfig: ref.watch(routerProvider),
   );

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/luxury_card.dart';
+import '../../core/widgets/onyx_logo.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -219,57 +220,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _brandMark() => Row(
-    children: [
-      Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          gradient: AppGradients.luxuryDark,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.midnight.withValues(alpha: 0.25),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.auto_graph_rounded,
-          color: AppColors.mint,
-          size: 26,
-        ),
-      ),
-      const SizedBox(width: 14),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Money Tracker',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppColors.midnight,
-                letterSpacing: -0.4,
-              ),
-            ),
-            Text(
-              'Personal Finance Intelligence',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 11,
-                color: AppColors.emerald,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
+  Widget _brandMark() => const OnyxLogo(
+    size: 56,
+    showText: true,
+    subtitle: 'Wealth Intelligence',
   );
 
   Widget _serverConnectionBar(BuildContext context) {
