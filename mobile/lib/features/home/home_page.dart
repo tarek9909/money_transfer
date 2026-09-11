@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/amount_display.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
 import '../../core/widgets/onyx_logo.dart';
@@ -1331,22 +1332,45 @@ class _HomePageState extends ConsumerState<HomePage> {
     final controller = TextEditingController(
       text: current.monthlyAllowance.toStringAsFixed(2),
     );
-    final result = await showDialog<bool>(
+    final result = await showAppBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('$currency Monthly Cap'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Set the target dynamic spending limit for this month.',
+      builder: (sheetContext) => AppBottomSheet(
+        title: '$currency Monthly Cap',
+        subtitle: 'Set the target dynamic spending limit for this month.',
+        icon: Icons.speed_rounded,
+        iconColor: AppColors.indigo,
+        iconBackground: AppColors.indigoSoft,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(sheetContext),
+            child: Text(
+              'Cancel',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 14),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.midnight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => Navigator.pop(sheetContext, true),
+            child: Text(
+              'Save Cap',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             TextField(
               controller: controller,
               autofocus: true,
@@ -1358,16 +1382,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Save Cap'),
-          ),
-        ],
       ),
     );
     if (result == true) {

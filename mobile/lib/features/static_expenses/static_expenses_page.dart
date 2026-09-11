@@ -6,6 +6,7 @@ import '../../core/money.dart';
 import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
 
@@ -619,37 +620,65 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
         }).toList();
         String? selected;
         if (!mounted) return;
-        final confirmed = await showDialog<bool>(
+        final confirmed = await showAppBottomSheet<bool>(
           context: context,
-          builder: (dialogContext) => StatefulBuilder(
-            builder: (dialogContext, setState) => AlertDialog(
-              title: const Text('Choose Payment Wallet'),
-              content: DropdownButtonFormField<String>(
-                initialValue: selected,
-                decoration: const InputDecoration(labelText: 'Wallet'),
-                items: wallets.map((raw) {
-                  final wallet = Map<String, dynamic>.from(raw as Map);
-                  return DropdownMenuItem<String>(
-                    value: wallet['id'] as String,
-                    child: Text(
-                      '${wallet['name']} · ${wallet['currencyCode']}',
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => selected = value),
-              ),
+          builder: (sheetContext) => StatefulBuilder(
+            builder: (sheetContext, setState) => AppBottomSheet(
+              title: 'Choose Payment Wallet',
+              subtitle: 'Select the wallet to deduct this bill payment from.',
+              icon: Icons.account_balance_wallet_rounded,
+              iconColor: AppColors.emerald,
+              iconBackground: AppColors.mintSoft,
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
+                  onPressed: () => Navigator.pop(sheetContext),
+                  child: Text(
+                    'Cancel',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ),
+                const SizedBox(width: 8),
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.midnight,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   onPressed: selected == null
                       ? null
-                      : () => Navigator.pop(dialogContext, true),
-                  child: const Text('Confirm Payment'),
+                      : () => Navigator.pop(sheetContext, true),
+                  child: Text(
+                    'Confirm Payment',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    initialValue: selected,
+                    decoration: const InputDecoration(labelText: 'Wallet'),
+                    items: wallets.map((raw) {
+                      final wallet = Map<String, dynamic>.from(raw as Map);
+                      return DropdownMenuItem<String>(
+                        value: wallet['id'] as String,
+                        child: Text(
+                          '${wallet['name']} · ${wallet['currencyCode']}',
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) => setState(() => selected = value),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -749,160 +778,37 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
         ? null
         : DateTime.tryParse(existing!.endDate!);
     var saving = false;
-    final result = await showDialog<bool>(
+    final result = await showAppBottomSheet<bool>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setState) {
-          return AlertDialog(
-            title: Text(
-              existing == null
-                  ? 'New Recurring Expense'
-                  : 'Edit Recurring Expense',
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: amount,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: due,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Due day of month (1-31)',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Start date'),
-                    subtitle: Text(_templateDate(startDate)),
-                    trailing: const Icon(Icons.calendar_today_outlined, size: 18),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: dialogContext,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2200),
-                        initialDate: startDate,
-                      );
-                      if (picked != null) setState(() => startDate = picked);
-                    },
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('End date (optional)'),
-                    subtitle: Text(
-                      endDate == null ? 'No end date' : _templateDate(endDate!),
-                    ),
-                    trailing: endDate == null
-                        ? const Icon(Icons.calendar_today_outlined, size: 18)
-                        : IconButton(
-                            onPressed: () => setState(() => endDate = null),
-                            icon: const Icon(Icons.clear, size: 18),
-                          ),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: dialogContext,
-                        firstDate: startDate,
-                        lastDate: DateTime(2200),
-                        initialDate: endDate ?? startDate,
-                      );
-                      if (picked != null) setState(() => endDate = picked);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: accountId,
-                    items: accounts.map((raw) {
-                      final item = Map<String, dynamic>.from(raw as Map);
-                      return DropdownMenuItem(
-                        value: item['id'] as String,
-                        child: Text(item['name'].toString()),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        accountId = value;
-                        walletId = null;
-                        for (final raw in wallets) {
-                          final wallet = Map<String, dynamic>.from(raw as Map);
-                          if (wallet['accountId'] == accountId) {
-                            walletId = wallet['id'] as String;
-                            break;
-                          }
-                        }
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Account'),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: walletId,
-                    items: wallets
-                        .where((raw) {
-                          final wallet = Map<String, dynamic>.from(raw as Map);
-                          return wallet['accountId'] == accountId;
-                        })
-                        .map((raw) {
-                          final item = Map<String, dynamic>.from(raw as Map);
-                          return DropdownMenuItem(
-                            value: item['id'] as String,
-                            child: Text(item['name'].toString()),
-                          );
-                        })
-                        .toList(),
-                    onChanged: (value) => setState(() => walletId = value),
-                    decoration: const InputDecoration(
-                      labelText: 'Default Wallet',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String?>(
-                    initialValue: categoryId,
-                    items: [
-                      const DropdownMenuItem<String?>(
-                        value: null,
-                        child: Text('No category'),
-                      ),
-                      ...categories.map((raw) {
-                        final item = Map<String, dynamic>.from(raw as Map);
-                        return DropdownMenuItem<String?>(
-                          value: item['id'] as String,
-                          child: Text(item['name'].toString()),
-                        );
-                      }),
-                    ],
-                    onChanged: (value) => setState(() => categoryId = value),
-                    decoration: const InputDecoration(labelText: 'Category'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: notes,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes (optional)',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setState) {
+          return AppBottomSheet(
+            title: existing == null
+                ? 'New Recurring Expense'
+                : 'Edit Recurring Expense',
+            subtitle: 'Configure automated monthly bill schedules.',
+            icon: Icons.repeat_rounded,
+            iconColor: AppColors.amber,
+            iconBackground: AppColors.amber.withValues(alpha: 0.12),
             actions: [
               TextButton(
-                onPressed: saving ? null : () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
+                onPressed: saving ? null : () => Navigator.pop(sheetContext),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.midnight,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: saving
                     ? null
                     : () async {
@@ -933,8 +839,8 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                                 .read(apiClientProvider)
                                 .updateTemplate(existing.id, data);
                           }
-                          if (dialogContext.mounted) {
-                            Navigator.pop(dialogContext, true);
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext, true);
                           }
                         } catch (error) {
                           setState(() => saving = false);
@@ -953,6 +859,146 @@ class _StaticExpensesPageState extends ConsumerState<StaticExpensesPage> {
                     : Text(existing == null ? 'Create' : 'Save'),
               ),
             ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: name,
+                  decoration: const InputDecoration(labelText: 'Name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amount,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: due,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Due day of month (1-31)',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Start date'),
+                  subtitle: Text(_templateDate(startDate)),
+                  trailing: const Icon(Icons.calendar_today_outlined, size: 18),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: sheetContext,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2200),
+                      initialDate: startDate,
+                    );
+                    if (picked != null) setState(() => startDate = picked);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('End date (optional)'),
+                  subtitle: Text(
+                    endDate == null ? 'No end date' : _templateDate(endDate!),
+                  ),
+                  trailing: endDate == null
+                      ? const Icon(Icons.calendar_today_outlined, size: 18)
+                      : IconButton(
+                          onPressed: () => setState(() => endDate = null),
+                          icon: const Icon(Icons.clear, size: 18),
+                        ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: sheetContext,
+                      firstDate: startDate,
+                      lastDate: DateTime(2200),
+                      initialDate: endDate ?? startDate,
+                    );
+                    if (picked != null) setState(() => endDate = picked);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: accountId,
+                  items: accounts.map((raw) {
+                    final item = Map<String, dynamic>.from(raw as Map);
+                    return DropdownMenuItem(
+                      value: item['id'] as String,
+                      child: Text(item['name'].toString()),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      accountId = value;
+                      walletId = null;
+                      for (final raw in wallets) {
+                        final wallet = Map<String, dynamic>.from(raw as Map);
+                        if (wallet['accountId'] == accountId) {
+                          walletId = wallet['id'] as String;
+                          break;
+                        }
+                      }
+                    });
+                  },
+                  decoration: const InputDecoration(labelText: 'Account'),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: walletId,
+                  items: wallets
+                      .where((raw) {
+                        final wallet = Map<String, dynamic>.from(raw as Map);
+                        return wallet['accountId'] == accountId;
+                      })
+                      .map((raw) {
+                        final item = Map<String, dynamic>.from(raw as Map);
+                        return DropdownMenuItem(
+                          value: item['id'] as String,
+                          child: Text(item['name'].toString()),
+                        );
+                      })
+                      .toList(),
+                  onChanged: (value) => setState(() => walletId = value),
+                  decoration: const InputDecoration(
+                    labelText: 'Default Wallet',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  isExpanded: true,
+                  initialValue: categoryId,
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('No category'),
+                    ),
+                    ...categories.map((raw) {
+                      final item = Map<String, dynamic>.from(raw as Map);
+                      return DropdownMenuItem<String?>(
+                        value: item['id'] as String,
+                        child: Text(item['name'].toString()),
+                      );
+                    }),
+                  ],
+                  onChanged: (value) => setState(() => categoryId = value),
+                  decoration: const InputDecoration(labelText: 'Category'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notes,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes (optional)',
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/money.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
 
@@ -452,7 +453,7 @@ class AccountsPage extends ConsumerWidget {
   }
 
   Future<void> _openAddAccountDialog(BuildContext context) async {
-    await showDialog<bool>(
+    await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => const _AddAccountDialog(),
     );
@@ -462,7 +463,7 @@ class AccountsPage extends ConsumerWidget {
     BuildContext context,
     Map<String, dynamic> account,
   ) async {
-    await showDialog<bool>(
+    await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _EditAccountDialog(account: account),
     );
@@ -472,7 +473,7 @@ class AccountsPage extends ConsumerWidget {
     BuildContext context,
     Map<String, dynamic> account,
   ) async {
-    await showDialog<bool>(
+    await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _AddWalletDialog(account: account),
     );
@@ -482,7 +483,7 @@ class AccountsPage extends ConsumerWidget {
     BuildContext context,
     Map<String, dynamic> wallet,
   ) async {
-    await showDialog<bool>(
+    await showAppBottomSheet<bool>(
       context: context,
       builder: (_) => _EditWalletDialog(wallet: wallet),
     );
@@ -541,36 +542,49 @@ class _AddAccountDialogState extends ConsumerState<_AddAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.indigoSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.account_balance_rounded,
-              color: AppColors.indigo,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'New Account',
+    return AppBottomSheet(
+      title: 'New Account',
+      subtitle: 'Group multiple currency wallets under an institution.',
+      icon: Icons.account_balance_rounded,
+      iconColor: AppColors.indigo,
+      iconBackground: AppColors.indigoSoft,
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.midnight,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.midnight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: _saving ? null : _submit,
+          child: _saving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  'Create Account',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+        ),
+      ],
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
@@ -596,24 +610,6 @@ class _AddAccountDialogState extends ConsumerState<_AddAccountDialog> {
           ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Create Account'),
-        ),
-      ],
     );
   }
 }
@@ -676,36 +672,49 @@ class _EditAccountDialogState extends ConsumerState<_EditAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.indigoSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.edit_rounded,
-              color: AppColors.indigo,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Edit Account',
+    return AppBottomSheet(
+      title: 'Edit Account',
+      subtitle: 'Update the account name across linked wallets.',
+      icon: Icons.edit_rounded,
+      iconColor: AppColors.indigo,
+      iconBackground: AppColors.indigoSoft,
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.midnight,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.midnight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: _saving ? null : _submit,
+          child: _saving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  'Save Changes',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+        ),
+      ],
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
@@ -728,24 +737,6 @@ class _EditAccountDialogState extends ConsumerState<_EditAccountDialog> {
           ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Save Changes'),
-        ),
-      ],
     );
   }
 }
@@ -819,113 +810,31 @@ class _AddWalletDialogState extends ConsumerState<_AddWalletDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.mintSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              color: AppColors.emerald,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Add Wallet',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.midnight,
-              ),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Account: ${widget.account['name']}',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _nameController,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Wallet Name',
-                hintText: 'e.g. Daily Spending, Savings',
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: _type,
-              decoration: const InputDecoration(labelText: 'Type'),
-              items: const [
-                DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                DropdownMenuItem(value: 'CHECKING', child: Text('Checking')),
-                DropdownMenuItem(value: 'SAVINGS', child: Text('Savings')),
-                DropdownMenuItem(value: 'CREDIT_CARD', child: Text('Credit Card')),
-                DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
-              ],
-              onChanged: (value) {
-                if (value != null) setState(() => _type = value);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _currencyController,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Currency Code',
-                hintText: 'USD, EUR, LBP',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _balanceController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Initial Balance',
-                prefixText: '\$ ',
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                _error!,
-                style: GoogleFonts.plusJakartaSans(
-                  color: AppColors.crimson,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+    return AppBottomSheet(
+      title: 'Add Wallet',
+      subtitle: 'Account: ${widget.account['name']}',
+      icon: Icons.account_balance_wallet_rounded,
+      iconColor: AppColors.emerald,
+      iconBackground: AppColors.mintSoft,
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
+        const SizedBox(width: 8),
         FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.midnight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           onPressed: _saving ? null : _submit,
           child: _saving
               ? const SizedBox.square(
@@ -935,9 +844,73 @@ class _AddWalletDialogState extends ConsumerState<_AddWalletDialog> {
                     color: Colors.white,
                   ),
                 )
-              : const Text('Add Wallet'),
+              : Text(
+                  'Add Wallet',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
         ),
       ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Wallet Name',
+              hintText: 'e.g. Daily Spending, Savings',
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            isExpanded: true,
+            initialValue: _type,
+            decoration: const InputDecoration(labelText: 'Type'),
+            items: const [
+              DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+              DropdownMenuItem(value: 'CHECKING', child: Text('Checking')),
+              DropdownMenuItem(value: 'SAVINGS', child: Text('Savings')),
+              DropdownMenuItem(value: 'CREDIT_CARD', child: Text('Credit Card')),
+              DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _type = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _currencyController,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'Currency Code',
+              hintText: 'USD, EUR, LBP',
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _balanceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Initial Balance',
+              prefixText: '\$ ',
+            ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _error!,
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.crimson,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1005,36 +978,49 @@ class _EditWalletDialogState extends ConsumerState<_EditWalletDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.mintSoft,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.edit_rounded,
-              color: AppColors.emerald,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            'Edit Wallet',
+    return AppBottomSheet(
+      title: 'Edit Wallet',
+      subtitle: 'Change wallet name or classification type.',
+      icon: Icons.edit_rounded,
+      iconColor: AppColors.emerald,
+      iconBackground: AppColors.mintSoft,
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: Text(
+            'Cancel',
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.midnight,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
             ),
           ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+        ),
+        const SizedBox(width: 8),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.midnight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: _saving ? null : _submit,
+          child: _saving
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  'Save Changes',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+        ),
+      ],
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
@@ -1073,24 +1059,6 @@ class _EditWalletDialogState extends ConsumerState<_EditWalletDialog> {
           ],
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Text('Save Changes'),
-        ),
-      ],
     );
   }
 }

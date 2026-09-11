@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/status_badge.dart';
 
@@ -461,31 +462,60 @@ class SettingsPage extends ConsumerWidget {
     Map<String, dynamic> data,
   ) async {
     String value = data['preferredCurrency']?.toString() ?? 'USD';
-    final result = await showDialog<String>(
+    final result = await showAppBottomSheet<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Preferred Currency'),
-        content: DropdownButtonFormField<String>(
-          initialValue: value,
-          items: const [
-            DropdownMenuItem(value: 'USD', child: Text('USD - United States Dollar')),
-            DropdownMenuItem(value: 'EUR', child: Text('EUR - Euro')),
-            DropdownMenuItem(value: 'GBP', child: Text('GBP - British Pound')),
-            DropdownMenuItem(value: 'LBP', child: Text('LBP - Lebanese Pound')),
-            DropdownMenuItem(value: 'AED', child: Text('AED - UAE Dirham')),
-          ],
-          onChanged: (next) => value = next ?? value,
-        ),
+      builder: (sheetContext) => AppBottomSheet(
+        title: 'Preferred Currency',
+        subtitle: 'Select default currency for your global net worth display.',
+        icon: Icons.currency_exchange_rounded,
+        iconColor: AppColors.indigo,
+        iconBackground: AppColors.indigoSoft,
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(sheetContext),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
+          const SizedBox(width: 8),
           FilledButton(
-            onPressed: () => Navigator.pop(context, value),
-            child: const Text('Save'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.midnight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => Navigator.pop(sheetContext, value),
+            child: Text(
+              'Save',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: value,
+              decoration: const InputDecoration(labelText: 'Currency'),
+              items: const [
+                DropdownMenuItem(value: 'USD', child: Text('USD - United States Dollar')),
+                DropdownMenuItem(value: 'EUR', child: Text('EUR - Euro')),
+                DropdownMenuItem(value: 'GBP', child: Text('GBP - British Pound')),
+                DropdownMenuItem(value: 'LBP', child: Text('LBP - Lebanese Pound')),
+                DropdownMenuItem(value: 'AED', child: Text('AED - UAE Dirham')),
+              ],
+              onChanged: (next) => value = next ?? value,
+            ),
+          ],
+        ),
       ),
     );
     if (result != null) {
@@ -508,32 +538,139 @@ class SettingsPage extends ConsumerWidget {
     if (!context.mounted) return;
     var filter = 'ALL';
 
-    await showDialog<void>(
+    await showAppBottomSheet<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setState) => AlertDialog(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Categories'),
-              DropdownButton<String>(
-                underline: const SizedBox(),
-                value: filter,
-                items: const [
-                  DropdownMenuItem(value: 'ALL', child: Text('All')),
-                  DropdownMenuItem(value: 'SPENDING', child: Text('Spending')),
-                  DropdownMenuItem(value: 'INCOME', child: Text('Income')),
-                ],
-                onChanged: (value) => setState(() => filter = value ?? 'ALL'),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setState) => AppBottomSheet(
+          title: 'Categories',
+          subtitle: 'Manage and categorize spending and income.',
+          icon: Icons.category_rounded,
+          iconColor: AppColors.indigo,
+          iconBackground: AppColors.indigoSoft,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(sheetContext),
+              child: Text(
+                'Close',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ],
-          ),
-          content: SizedBox(
-            width: 360,
-            height: 380,
-            child: ListView(
-              shrinkWrap: true,
-              children: categories
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.midnight,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () async {
+                final controller = TextEditingController();
+                final created = await showAppBottomSheet<bool>(
+                  context: sheetContext,
+                  builder: (newCatContext) => AppBottomSheet(
+                    title: 'New Category',
+                    subtitle: 'Add a custom category tag for transactions.',
+                    icon: Icons.add_circle_outline_rounded,
+                    iconColor: AppColors.emerald,
+                    iconBackground: AppColors.mintSoft,
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(newCatContext),
+                        child: Text(
+                          'Cancel',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.midnight,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(newCatContext, true),
+                        child: Text(
+                          'Create',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: controller,
+                          autofocus: true,
+                          decoration: const InputDecoration(labelText: 'Category Name'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                if (created == true && controller.text.trim().isNotEmpty) {
+                  try {
+                    final category = await ref
+                        .read(apiClientProvider)
+                        .createCategory({
+                          'name': controller.text.trim(),
+                          'appliesTo': filter == 'INCOME'
+                              ? 'INCOME'
+                              : 'SPENDING',
+                        });
+                    setState(() => categories.add(category));
+                    ref.invalidate(categoriesProvider);
+                    ref.invalidate(incomeCategoriesProvider);
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error.toString())));
+                    }
+                  }
+                }
+                controller.dispose();
+              },
+              icon: const Icon(Icons.add_rounded, size: 16),
+              label: const Text('Add Category'),
+            ),
+          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Filter by type:',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  DropdownButton<String>(
+                    underline: const SizedBox(),
+                    value: filter,
+                    items: const [
+                      DropdownMenuItem(value: 'ALL', child: Text('All Categories')),
+                      DropdownMenuItem(value: 'SPENDING', child: Text('Spending')),
+                      DropdownMenuItem(value: 'INCOME', child: Text('Income')),
+                    ],
+                    onChanged: (value) => setState(() => filter = value ?? 'ALL'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...categories
                   .where((item) {
                     final type = item['appliesTo'];
                     return filter == 'ALL' || type == filter || type == 'BOTH';
@@ -592,14 +729,50 @@ class SettingsPage extends ConsumerWidget {
                                 text: item['name'].toString(),
                               );
                               var appliesTo = item['appliesTo'].toString();
-                              final edited = await showDialog<bool>(
-                                context: dialogContext,
+                              final edited = await showAppBottomSheet<bool>(
+                                context: sheetContext,
                                 builder: (editContext) => StatefulBuilder(
                                   builder: (editContext, editState) =>
-                                      AlertDialog(
-                                        title: const Text('Edit Category'),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
+                                      AppBottomSheet(
+                                        title: 'Edit Category',
+                                        subtitle: 'Update name or transaction application.',
+                                        icon: Icons.edit_rounded,
+                                        iconColor: AppColors.indigo,
+                                        iconBackground: AppColors.indigoSoft,
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(editContext),
+                                            child: Text(
+                                              'Cancel',
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: AppColors.midnight,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            onPressed: () => Navigator.pop(
+                                              editContext,
+                                              true,
+                                            ),
+                                            child: Text(
+                                              'Save',
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
                                           children: [
                                             TextField(
                                               controller: name,
@@ -607,6 +780,7 @@ class SettingsPage extends ConsumerWidget {
                                             ),
                                             const SizedBox(height: 12),
                                             DropdownButtonFormField<String>(
+                                              isExpanded: true,
                                               initialValue: appliesTo,
                                               decoration: const InputDecoration(labelText: 'Applies to'),
                                               items: const [
@@ -630,20 +804,6 @@ class SettingsPage extends ConsumerWidget {
                                             ),
                                           ],
                                         ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(editContext),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () => Navigator.pop(
-                                              editContext,
-                                              true,
-                                            ),
-                                            child: const Text('Save'),
-                                          ),
-                                        ],
                                       ),
                                 ),
                               );
@@ -695,66 +855,9 @@ class SettingsPage extends ConsumerWidget {
                         ],
                       ),
                     );
-                  })
-                  .toList(),
-            ),
+                  }),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
-            ),
-            FilledButton.icon(
-              onPressed: () async {
-                final controller = TextEditingController();
-                final created = await showDialog<bool>(
-                  context: dialogContext,
-                  builder: (context) => AlertDialog(
-                    title: const Text('New Category'),
-                    content: TextField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Create'),
-                      ),
-                    ],
-                  ),
-                );
-                if (created == true && controller.text.trim().isNotEmpty) {
-                  try {
-                    final category = await ref
-                        .read(apiClientProvider)
-                        .createCategory({
-                          'name': controller.text.trim(),
-                          'appliesTo': filter == 'INCOME'
-                              ? 'INCOME'
-                              : 'SPENDING',
-                        });
-                    setState(() => categories.add(category));
-                    ref.invalidate(categoriesProvider);
-                    ref.invalidate(incomeCategoriesProvider);
-                  } catch (error) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(error.toString())));
-                    }
-                  }
-                }
-                controller.dispose();
-              },
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Add Category'),
-            ),
-          ],
         ),
       ),
     );
@@ -766,135 +869,34 @@ class SettingsPage extends ConsumerWidget {
     String? testResult;
     bool isTesting = false;
 
-    await showDialog<void>(
+    await showAppBottomSheet<void>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Text(
-            'Backend Server',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Specify the API endpoint address for the Personal Money Tracker backend.',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    labelText: 'API Base URL',
-                    hintText: 'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Quick Presets:',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.cloud_done_rounded, size: 16),
-                      label: const Text('Cloud (Online)'),
-                      onPressed: () => setDialogState(
-                        () => controller.text =
-                            'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
-                      ),
-                    ),
-                    ActionChip(
-                      label: const Text('Wi-Fi (192.168.10.127)'),
-                      onPressed: () => setDialogState(
-                        () => controller.text = 'http://192.168.10.127:4050/api/v1',
-                      ),
-                    ),
-                    ActionChip(
-                      label: const Text('ADB Reverse (127.0.0.1)'),
-                      onPressed: () => setDialogState(
-                        () => controller.text = 'http://127.0.0.1:4050/api/v1',
-                      ),
-                    ),
-                    ActionChip(
-                      label: const Text('Emulator (10.0.2.2)'),
-                      onPressed: () => setDialogState(
-                        () => controller.text = 'http://10.0.2.2:4050/api/v1',
-                      ),
-                    ),
-                  ],
-                ),
-                if (testResult != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: testResult!.contains('Success')
-                          ? AppColors.mintSoft
-                          : AppColors.crimsonSoft,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      testResult!,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: testResult!.contains('Success')
-                            ? AppColors.emerald
-                            : AppColors.crimson,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: isTesting
-                      ? null
-                      : () async {
-                          setDialogState(() {
-                            isTesting = true;
-                            testResult = null;
-                          });
-                          final ok = await client.testConnection(controller.text.trim());
-                          setDialogState(() {
-                            isTesting = false;
-                            testResult = ok
-                                ? '✓ Successfully connected to backend!'
-                                : '✗ Cannot reach server at this address';
-                          });
-                        },
-                  icon: isTesting
-                      ? const SizedBox.square(
-                          dimension: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.network_check_rounded, size: 16),
-                  label: const Text('Test Connection'),
-                ),
-              ],
-            ),
-          ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setDialogState) => AppBottomSheet(
+          title: 'Backend Server',
+          subtitle: 'Specify the API endpoint address for the backend.',
+          icon: Icons.dns_rounded,
+          iconColor: AppColors.indigo,
+          iconBackground: AppColors.indigoSoft,
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(sheetContext),
+              child: Text(
+                'Cancel',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ),
+            const SizedBox(width: 8),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.midnight,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               onPressed: () async {
                 final newUrl = controller.text.trim();
                 if (newUrl.isNotEmpty) {
@@ -904,11 +906,125 @@ class SettingsPage extends ConsumerWidget {
                   ref.invalidate(accountsProvider);
                   ref.invalidate(walletsProvider);
                 }
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                if (sheetContext.mounted) Navigator.pop(sheetContext);
               },
-              child: const Text('Save & Connect'),
+              child: Text(
+                'Save & Connect',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Specify the API endpoint address for the Personal Money Tracker backend.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  labelText: 'API Base URL',
+                  hintText: 'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Quick Presets:',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.cloud_done_rounded, size: 16),
+                    label: const Text('Cloud (Online)'),
+                    onPressed: () => setDialogState(
+                      () => controller.text =
+                          'https://moneytrackerrrrrrrrrrrr.duckdns.org/api/v1',
+                    ),
+                  ),
+                  ActionChip(
+                    label: const Text('Wi-Fi (192.168.10.127)'),
+                    onPressed: () => setDialogState(
+                      () => controller.text = 'http://192.168.10.127:4050/api/v1',
+                    ),
+                  ),
+                  ActionChip(
+                    label: const Text('ADB Reverse (127.0.0.1)'),
+                    onPressed: () => setDialogState(
+                      () => controller.text = 'http://127.0.0.1:4050/api/v1',
+                    ),
+                  ),
+                  ActionChip(
+                    label: const Text('Emulator (10.0.2.2)'),
+                    onPressed: () => setDialogState(
+                      () => controller.text = 'http://10.0.2.2:4050/api/v1',
+                    ),
+                  ),
+                ],
+              ),
+              if (testResult != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: testResult!.contains('Success')
+                        ? AppColors.mintSoft
+                        : AppColors.crimsonSoft,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    testResult!,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: testResult!.contains('Success')
+                          ? AppColors.emerald
+                          : AppColors.crimson,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: isTesting
+                    ? null
+                    : () async {
+                        setDialogState(() {
+                          isTesting = true;
+                          testResult = null;
+                        });
+                        final ok = await client.testConnection(controller.text.trim());
+                        setDialogState(() {
+                          isTesting = false;
+                          testResult = ok
+                              ? '✓ Successfully connected to backend!'
+                              : '✗ Cannot reach server at this address';
+                        });
+                      },
+                icon: isTesting
+                    ? const SizedBox.square(
+                        dimension: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.network_check_rounded, size: 16),
+                label: const Text('Test Connection'),
+              ),
+            ],
+          ),
         ),
       ),
     );

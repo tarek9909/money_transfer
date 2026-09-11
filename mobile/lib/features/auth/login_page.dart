@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 import '../../core/widgets/onyx_logo.dart';
 
@@ -290,7 +291,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _showServerDialog(BuildContext context) async {
-    await showDialog<void>(
+    await showAppBottomSheet<void>(
       context: context,
       builder: (_) => const _ServerSettingsDialog(),
     );
@@ -333,19 +334,50 @@ class _ServerSettingsDialogState extends ConsumerState<_ServerSettingsDialog> {
   Widget build(BuildContext context) {
     final client = ref.read(apiClientProvider);
 
-    return AlertDialog(
-      title: Text(
-        'Backend Server',
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
+    return AppBottomSheet(
+      title: 'Backend Server',
+      subtitle: 'Specify the API endpoint address for the backend.',
+      icon: Icons.dns_rounded,
+      iconColor: AppColors.indigo,
+      iconBackground: AppColors.indigoSoft,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        const SizedBox(width: 8),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.midnight,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () async {
+            final newUrl = _controller.text.trim();
+            if (newUrl.isNotEmpty) {
+              await client.saveBaseUrl(newUrl);
+            }
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: Text(
+            'Save & Connect',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
             Text(
               'Specify the API endpoint address for the Personal Money Tracker backend.',
               style: GoogleFonts.plusJakartaSans(
@@ -457,23 +489,6 @@ class _ServerSettingsDialogState extends ConsumerState<_ServerSettingsDialog> {
             ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () async {
-            final newUrl = _controller.text.trim();
-            if (newUrl.isNotEmpty) {
-              await client.saveBaseUrl(newUrl);
-            }
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('Save & Connect'),
-        ),
-      ],
-    );
-  }
+      );
+    }
 }

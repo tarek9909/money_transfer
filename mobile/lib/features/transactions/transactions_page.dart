@@ -6,6 +6,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/amount_display.dart';
+import '../../core/widgets/app_bottom_sheet.dart';
 import '../../core/widgets/luxury_card.dart';
 
 class TransactionsPage extends ConsumerStatefulWidget {
@@ -468,26 +469,15 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   }
 
   Future<bool> _confirmVoid(BuildContext context, TransactionItem item) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await AppConfirmationSheet.show(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Void Transaction?'),
-        content: const Text(
+      title: 'Void Transaction?',
+      message:
           'This will permanently reverse the transaction and restore the original wallet balance.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.crimson),
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Void'),
-          ),
-        ],
-      ),
+      confirmLabel: 'Void',
+      confirmColor: AppColors.crimson,
+      icon: Icons.delete_outline_rounded,
     );
-    return confirmed == true ? _void(item) : false;
+    return confirmed ? _void(item) : false;
   }
 }
